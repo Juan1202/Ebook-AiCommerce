@@ -161,7 +161,11 @@ Proxy hacia microservicios.
 | Servicio no registrado | 404    |
 | Servicio no disponible | 503    |
 
----
+pytest tests/ -v
+o:
+python -m pytest tests/ -v
+
+```
 
 ## Ejecución
 

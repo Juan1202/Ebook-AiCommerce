@@ -1,151 +1,148 @@
-# Ebook-AiCommerce
+# BookFlow AI Commerce — Sprint 1
 
-Proyecto independiente con las tareas **Dev7** y **Dev9** del Sprint 1 de BookFlow AI Commerce.
+Plataforma inteligente de catalogación, pricing competitivo y venta de libros.
 
-| Servicio            | Puerto | Descripción                                              |
-|---------------------|--------|----------------------------------------------------------|
-| data-quality-module | 8007   | Métricas de calidad sobre lotes de inventario (Dev7)     |
-| bff-gateway         | 8009   | Proxy/gateway que enruta peticiones a microservicios (Dev9) |
+## Arquitectura — Sprint 1 (Base Arquitectónica y Operativa)
 
-> **Aislamiento:** `data-quality-module` llama al `inventory-service` vía HTTP.
-> Como no está en este proyecto, usa **datos mock automáticamente** — sin errores.
-> `bff-gateway` enruta `/api/quality/*` correctamente.
-> Cualquier otra ruta devuelve **503 controlado en JSON**.
+```
+Usuario
+  └─► commercial-frontend :3000   (catálogo web)
+  └─► admin-frontend      :3001   (panel admin)
+         └─► bff-gateway  :8009   (API Gateway)
+               ├─► auth-service         :8001  → auth_db
+               ├─► inventory-service    :8002  → inventory_db
+               ├─► catalog-service      :8003  → catalog_db
+               ├─► ai-enrichment-mock   :8006  (sin DB, mock)
+               ├─► data-quality-module  :8007  (proxy inventario)
+               └─► config-module        :8008  → config_db
+```
 
----
+## Inicio rápido
 
-## Levantar el proyecto
-
+### Opción A — Docker Compose (recomendado)
 ```bash
-# 1. Preparar variables de entorno (solo la primera vez)
-cp .env.example .env
-
-# 2. Construir imágenes y levantar ambos servicios
 docker-compose up --build
-
-# 3. Levantar un servicio por separado
-docker-compose up --build data-quality-module
-docker-compose up --build bff-gateway
-
-# 4. Ver logs en tiempo real
-docker-compose logs -f
-
-# 5. Detener
-docker-compose down
 ```
 
----
+### Opción B — Servicios individuales (desarrollo)
 
-## Probar Dev7 — data-quality-module `:8007`
-
-### Health check
-```
-GET http://localhost:8007/quality/health
-```
-
-### Resumen global de calidad
-```
-GET http://localhost:8007/quality/summary
-```
-Respuesta esperada (datos mock, inventory no está corriendo):
-```json
-{
-  "total_batches": 3,
-  "completed_batches": 2,
-  "failed_batches": 1,
-  "total_items_processed": 67,
-  "total_errors": 9,
-  "overall_error_rate": 0.1343,
-  "batches": [...]
-}
-```
-
-### Listar lotes con tasa de error
-```
-GET http://localhost:8007/quality/batches
-```
-
-### Reporte detallado de un lote
-```
-GET http://localhost:8007/quality/batches/1/report
-```
-
-### Lote inexistente (404 controlado)
-```
-GET http://localhost:8007/quality/batches/9999/report
-```
-
----
-
-## Probar Dev9 — bff-gateway `:8009`
-
-### Health check del gateway
-```
-GET http://localhost:8009/health
-```
-
-### Enrutar a data-quality-module (funciona ✓)
-```
-GET http://localhost:8009/api/quality/summary
-GET http://localhost:8009/api/quality/batches
-GET http://localhost:8009/api/quality/batches/1/report
-```
-
-### Servicio no disponible (503 controlado)
-```
-GET http://localhost:8009/api/catalog/books/
-```
-Respuesta esperada:
-```json
-{
-  "detail": "Servicio 'catalog' no disponible: ConnectError"
-}
-```
-
-### Servicio no registrado (404 controlado)
-```
-GET http://localhost:8009/api/servicio-inventado/ruta
-```
-
----
-
-## Ejecutar tests
+Cada servicio corre de forma independiente:
 
 ```bash
-# Desde la carpeta del servicio
-cd data-quality-module
-pip install -r requirements.txt
-pytest tests/ -v
+# Auth Service
+cd auth-service && pip install -r requirements.txt
+DATABASE_URL="postgresql://user:pass@localhost:5432/auth_db" uvicorn app.main:app --port 8001
 
-cd ../bff-gateway
-pip install -r requirements.txt
-pytest tests/ -v
+# Inventory Service
+cd inventory-service && pip install -r requirements.txt
+DATABASE_URL="postgresql://user:pass@localhost:5432/inventory_db" uvicorn app.main:app --port 8002
+
+# Catalog Service
+cd catalog-service && pip install -r requirements.txt
+DATABASE_URL="postgresql://user:pass@localhost:5432/catalog_db" uvicorn app.main:app --port 8003
+
+# AI Enrichment Mock (no necesita DB)
+cd ai-enrichment-mock && pip install -r requirements.txt
+uvicorn app.main:app --port 8006
+
+# Data Quality Module (no necesita DB)
+cd data-quality-module && pip install -r requirements.txt
+uvicorn app.main:app --port 8007
+
+# Config Module
+cd config-module && pip install -r requirements.txt
+DATABASE_URL="postgresql://user:pass@localhost:5432/config_db" uvicorn app.main:app --port 8008
+
+# BFF Gateway
+cd bff-gateway && pip install -r requirements.txt
+uvicorn app.main:app --port 8009
+
+# Admin Frontend
+cd admin-frontend && npm install && npm run dev  # → http://localhost:3001
+
+# Commercial Frontend
+cd commercial-frontend && npm install && npm run dev  # → http://localhost:3000
 ```
 
----
+## Puertos
 
-## Estructura del proyecto
+| Servicio             | Puerto | URL Docs                          |
+|----------------------|--------|-----------------------------------|
+| commercial-frontend  | 3000   | http://localhost:3000             |
+| admin-frontend       | 3001   | http://localhost:3001             |
+| auth-service         | 8001   | http://localhost:8001/docs        |
+| inventory-service    | 8002   | http://localhost:8002/docs        |
+| catalog-service      | 8003   | http://localhost:8003/docs        |
+| ai-enrichment-mock   | 8006   | http://localhost:8006/docs        |
+| data-quality-module  | 8007   | http://localhost:8007/docs        |
+| config-module        | 8008   | http://localhost:8008/docs        |
+| bff-gateway          | 8009   | http://localhost:8009/docs        |
 
+## Token de prueba (desarrollo local)
+
+Para autenticación sin base de datos:
+```bash
+curl http://localhost:8001/auth/mock-token
+# o via BFF:
+curl http://localhost:8009/api/auth/mock-token
 ```
-Ebook-AiCommerce/
-├── data-quality-module/        ← Dev7
-│   ├── app/
-│   │   ├── domain/quality.py          (modelos + datos mock)
-│   │   ├── application/quality_use_cases.py  (lógica + fallback)
-│   │   └── routers/quality_router.py  (endpoints)
-│   ├── tests/test_quality.py
-│   ├── Dockerfile
-│   └── requirements.txt
-├── bff-gateway/                ← Dev9
-│   ├── app/
-│   │   ├── proxy.py            (cliente HTTP con manejo de errores)
-│   │   └── routers/gateway_router.py  (rutas del gateway)
-│   ├── tests/test_gateway.py
-│   ├── Dockerfile
-│   └── requirements.txt
-├── docker-compose.yml
-├── .env                        ← gitignoreado
-├── .env.example                ← plantilla para compartir
-├── .gitignore
-└── README.md
-```
+
+## Prueba del flujo completo
+
+1. **Obtener token de prueba:**
+   ```bash
+   curl http://localhost:8009/api/auth/mock-token
+   ```
+
+2. **Cargar inventario de prueba:**
+   ```bash
+   curl -X POST http://localhost:8009/api/inventory/upload \
+     -F "file=@sample_inventory.csv"
+   ```
+
+3. **Ver inventario cargado:**
+   ```bash
+   curl http://localhost:8009/api/inventory/items
+   ```
+
+4. **Crear libro en catálogo:**
+   ```bash
+   curl -X POST http://localhost:8009/api/catalog/books \
+     -H "Content-Type: application/json" \
+     -d '{"title":"Cien años de soledad","author":"García Márquez","isbn":"9780307474728"}'
+   ```
+
+5. **Enriquecer libro (mock):**
+   ```bash
+   curl -X POST http://localhost:8009/api/enrichment/book \
+     -H "Content-Type: application/json" \
+     -d '{"book_reference":"REF-001","title":"Cien años de soledad","author":"Gabriel García Márquez"}'
+   ```
+
+6. **Ver calidad de datos:**
+   ```bash
+   curl http://localhost:8009/api/quality/summary
+   ```
+
+7. **Estado de todos los servicios:**
+   ```bash
+   curl http://localhost:8009/api/services/status
+   ```
+
+## Aislamiento (Regla de oro Sprint 1)
+
+Cada servicio puede ejecutarse de forma INDEPENDIENTE:
+- Si el BFF no está disponible → los frontends usan datos **mock** automáticamente
+- Si el Inventory Service no está disponible → el Data Quality Module devuelve datos **mock**
+- El AI Enrichment Mock no depende de ningún servicio externo
+- Todos los servicios backend exponen `/health` para verificación
+
+
+## Tecnologías
+
+- **Backend:** Python 3.11 + FastAPI + SQLAlchemy + PostgreSQL
+- **Frontend:** React 18 + Vite
+- **Arquitectura backend:** Hexagonal Ligera (routers → application → domain → infrastructure)
+- **Contenedores:** Docker + Docker Compose
+- **Autenticación:** JWT (python-jose + passlib)
+- **Validación:** Pydantic v2
