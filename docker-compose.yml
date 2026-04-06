@@ -1,5 +1,8 @@
 version: "3.9"
 
+# Docker Compose lee automáticamente el archivo .env de la misma carpeta.
+# Copia .env.example como .env y completa los valores antes de levantar.
+
 networks:
   bookflow-network:
     driver: bridge
