@@ -215,6 +215,9 @@ curl http://localhost:8009/api/inventory/
 cd Ebook-AiCommerce/bff-gateway
 
 pytest tests/ -v
+o:
+python -m pytest tests/ -v
+
 ```
 
 **Salida esperada:**
