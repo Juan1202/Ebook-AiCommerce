@@ -1,0 +1,134 @@
+Guion para cada diaposi�va
+Esto es MUY importante. Esto es lo que deben decir cuando expongan.
+Diaposi�va 1 – Portada
+Qué decir:
+Este proyecto se llama BookFlow AI Commerce.
+Es una plataforma inteligente para la ges�ón, catalogación, pricing y venta de libros.
+La solución se construye bajo arquitectura de microservicios, metodología Scrum y despliegue en
+contenedores Docker.
+Esta propuesta se presenta como una consultoría tecnológica para construir una plataforma
+comercial escalable.
+Diaposi�va 2 – Contexto actual
+Qué decir:
+Actualmente el negocio presenta varios problemas:
+Inventarios en Excel, datos duplicados, precios mal definidos y procesos separados.
+Esto genera pérdida de �empo, errores y poca trazabilidad.
+Por eso se propone construir una plataforma que integre todo el flujo comercial en un solo
+sistema.
+Diaposi�va 3 – Obje�vo general
+Qué decir:
+El obje�vo del proyecto es diseñar e implementar una plataforma basada en microservicios que
+permita ges�onar inventario, enriquecer información con IA, calcular precios compe��vos y
+ges�onar pedidos y atención al cliente.
+Diaposi�va 4 – Obje�vos específicos
+Qué decir:
+Aquí cada compañero puede explicar un módulo:
+• Inventario y catálogo
+• Pricing
+• IA
+• Auten�cación
+
+--- PAGE BREAK ---
+
+• Pedidos
+• API Gateway
+• Asistente IA
+Estos obje�vos específicos corresponden a los microservicios del sistema.
+Diaposi�va 5 – Qué propone BookFlow
+Qué decir:
+La propuesta busca transformar inventario desordenado en un sistema comercial digital.
+El sistema permite cargar inventario, mejorar datos con IA, calcular precios y ejecutar el flujo
+completo de venta.
+Diaposi�va 6 – Diseño técnico
+Qué decir:
+La arquitectura es de microservicios.
+Frontend en React.
+Backend en FastAPI.
+API Gateway como punto de entrada.
+Base de datos PostgreSQL por microservicio.
+Despliegue en Docker Compose.
+Esto es MUY importante porque esto demuestra arquitectura.
+Diaposi�va 7 – Alcance funcional
+Qué decir:
+El sistema se divide en 4 dominios:
+• Seguridad
+• Inventario y catálogo
+• Inteligencia ar�ficial
+• Dominio comercial (carrito y pedidos)
+Diaposi�va 8 – Exclusiones y supuestos
+Qué decir (esto siempre lo preguntan):
+
+--- PAGE BREAK ---
+
+Para mantener el proyecto controlado, se definen exclusiones como pagos reales, logís�ca real y
+analí�ca avanzada.
+También se definen supuestos como:
+• El frontend solo se comunica con el API Gateway
+• Cada microservicio �ene su base de datos
+• El sistema se despliega en Docker
+• La comunicación es por REST
+Esto demuestra que saben definir alcance.
+Diaposi�va 9 – Arquitectura
+Qué decir:
+La arquitectura está basada en microservicios independientes conectados mediante un API
+Gateway.
+Cada servicio �ene su base de datos y responsabilidades específicas.
+Diaposi�va 10 – Plan de trabajo
+Qué decir:
+El proyecto se divide en 3 sprints de 2 semanas:
+• Sprint 1: Base y seguridad
+• Sprint 2: IA y pricing
+• Sprint 3: Flujo comercial completo
+Esto demuestra planificación ágil.
+Diaposi�va 11 – Equipo
+Qué decir:
+El equipo está organizado como una célula Scrum con desarrolladores, Scrum Master y Project
+Leader.
+Cada desarrollador entrega un módulo funcional por sprint.
+Diaposi�va 12, 13, 14 – Costos
+Qué decir:
+
+--- PAGE BREAK ---
+
+Se calculan costos del equipo, infraestructura, reservas, u�lidad e impuestos para obtener el precio
+total del proyecto.
+Esto convierte el proyecto en una propuesta comercial real.
+Diaposi�va 15 – Riesgos
+Qué decir:
+Se iden�fican riesgos como cambios de alcance, dependencia de APIs, retrasos e integración entre
+servicios.
+Cada riesgo �ene su estrategia de mi�gación.
+Diaposi�va 16 – Condiciones comerciales
+Qué decir:
+Se definen condiciones como moneda, forma de pago, duración del proyecto, metodología Scrum y
+ambiente Docker.
+Diaposi�va 17 – Resultado esperado
+Qué decir:
+El resultado es una plataforma funcional que conecta inventario, catálogo, pricing, pedidos y
+asistente IA en un sistema ejecutable.
+Diaposi�va 18 – Beneficios
+Qué decir:
+La solución reduce reprocesos, mejora precios, mejora la calidad de datos y deja una
+infraestructura lista para escalar.
+IMPORTANTE:
+1. El proyecto dura 6 semanas pero en la propuesta dice 3 meses
+En tu propuesta aparece:
+Duración es�mada: 3 meses
+Pero también dice:
+Plan de trabajo ágil de 6 semanas (3 sprints de 2 semanas)
+
+--- PAGE BREAK ---
+
+Entonces aquí hay algo que debes saber explicar:
+Cómo jus�ficar eso cuando expongas
+Puedes decir:
+El desarrollo del MVP se realiza en 6 semanas (3 sprints), pero la duración comercial del proyecto
+se es�ma en 3 meses porque incluye planeación, desarrollo, pruebas, estabilización,
+documentación, despliegue y cierre del proyecto.
+Eso en proyectos reales se llama:
+• Tiempo de desarrollo: 6 semanas
+• Tiempo de proyecto: 3 meses
+Y eso sí es realista en consultoría.
+
+--- PAGE BREAK ---
+

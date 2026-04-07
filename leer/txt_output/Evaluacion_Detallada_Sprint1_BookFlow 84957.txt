@@ -1,0 +1,116 @@
+Evaluación Detallada – Sprint 1
+BookFlow AI Commerce (Equipo)
+Este informe presenta una evaluación técnica detallada de las Historias de Usuario (HU),
+criterios de aceptación y actividades definidas por el equipo para el Sprint 1.
+El objetivo es identificar fortalezas, debilidades y proponer mejoras alineadas con prácticas
+de ingeniería de software profesional, arquitectura de microservicios y ejecución real de
+proyectos.
+DEV 1 – AUTH / SEGURIDAD
+Diagnóstico:
+El diseño es correcto a nivel básico, pero incompleto para un entorno real.
+Problemas:
+- No contempla roles ni permisos
+- No maneja refresh tokens
+- No contempla invalidación de sesión
+Mejoras:
+- Implementar roles y autorización
+- Manejar expiración y refresh token
+Justificación:
+La autenticación sin autorización no es suficiente en sistemas reales.
+DEV 2 – INVENTORY SERVICE
+Diagnóstico:
+Uno de los módulos más sólidos.
+Problemas:
+- No valida duplicados
+- No valida formato de datos
+- No contempla archivos inválidos
+Mejoras:
+- Validar duplicados
+- Validar estructura estricta
+
+--- PAGE BREAK ---
+
+Justificación:
+El inventario es la base del sistema. Datos incorrectos afectan todo el sistema.
+DEV 3 – CATALOG SERVICE
+Diagnóstico:
+Funcional pero limitado.
+Problemas:
+- No contempla paginación
+- No contempla búsqueda
+Mejoras:
+- Implementar paginación, filtros y búsqueda
+Justificación:
+Sin estos elementos, el sistema no escala.
+DEV 4 – FRONTEND ADMIN
+Diagnóstico:
+Correcto pero básico.
+Problemas:
+- No contempla filtros ni detalle
+Mejoras:
+- Agregar filtros y vista detallada
+Justificación:
+La operación depende de visibilidad clara.
+DEV 5 – FRONTEND COMERCIAL
+Diagnóstico:
+Muy básico.
+Problemas:
+- No tiene búsqueda ni filtros
+Mejoras:
+- Implementar navegación avanzada
+
+--- PAGE BREAK ---
+
+Justificación:
+Un catálogo sin navegación no es usable.
+DEV 6 – AI ENRICHMENT
+Diagnóstico:
+Arquitectura correcta.
+Problemas:
+- No valida entrada
+Mejoras:
+- Validar datos
+Justificación:
+La IA depende de la calidad del dato.
+DEV 7 – DATA QUALITY
+Diagnóstico:
+Bien planteado.
+Problemas:
+- No escala
+Mejoras:
+- Implementar filtros y paginación
+Justificación:
+Debe permitir análisis eficiente.
+DEV 8 – CONFIGURACIÓN
+Diagnóstico:
+Buen nivel.
+Problemas:
+- No valida tipos ni valores
+Mejoras:
+- Validar entradas
+
+--- PAGE BREAK ---
+
+Justificación:
+Errores en parámetros afectan todo el sistema.
+DEV 9 – BFF
+Diagnóstico:
+Correcto.
+Problemas:
+- No maneja fallos
+Mejoras:
+- Timeout, logs, fallback
+Justificación:
+Es punto crítico del sistema.
+Conclusión General
+Fortalezas:
+- Buena arquitectura
+- Separación correcta
+Debilidades:
+- Falta manejo de errores
+- Validaciones incompletas
+Recomendación:
+Pensar en escenarios reales y productivos.
+
+--- PAGE BREAK ---
+

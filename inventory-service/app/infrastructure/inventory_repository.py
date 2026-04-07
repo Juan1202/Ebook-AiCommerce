@@ -98,6 +98,10 @@ def get_batch_by_id(db: Session, batch_id: int) -> Optional[ImportBatch]:
     m = db.query(ImportBatchModel).filter(ImportBatchModel.id == batch_id).first()
     return _batch(m) if m else None
 
+def get_batch_by_name(db: Session, file_name: str) -> Optional[ImportBatch]:
+    m = db.query(ImportBatchModel).filter(ImportBatchModel.file_name == file_name).first()
+    return _batch(m) if m else None
+
 
 def get_errors_by_batch(db: Session, batch_id: int) -> List[ImportError]:
     return [_error(m) for m in db.query(ImportErrorModel).filter(

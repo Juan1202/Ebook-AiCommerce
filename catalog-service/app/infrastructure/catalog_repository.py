@@ -53,7 +53,7 @@ def get_book(db: Session, book_id: int) -> Optional[Book]:
 
 
 def get_all_books(db: Session, skip: int, limit: int, published_only: bool) -> List[Book]:
-    q = db.query(BookModel)
+    q = db.query(BookModel).order_by(BookModel.id.desc())
     if published_only:
         q = q.filter(BookModel.published_flag == True)
     return [_book(m) for m in q.offset(skip).limit(limit).all()]

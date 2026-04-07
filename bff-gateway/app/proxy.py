@@ -2,7 +2,7 @@ import os
 import httpx
 from fastapi import Request, Response, HTTPException
 
-TIMEOUT = 5.0
+TIMEOUT = 15.0
 
 # En este proyecto solo están activos quality y (opcionalmente) los demás.
 # Si un servicio no está corriendo, el gateway devuelve 503 controlado.

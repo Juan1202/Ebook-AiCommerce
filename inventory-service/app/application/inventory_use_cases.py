@@ -1,4 +1,5 @@
 import io
+import time
 
 import pandas as pd
 from sqlalchemy.orm import Session
@@ -34,6 +35,15 @@ def process_inventory_file(db: Session, file_name: str,
         raise ValueError(f"Columnas requeridas faltantes: {missing}")
 
     processed = valid = invalid = 0
+    seen_references = set()
+    db_items = inventory_repository.get_all_items(db, skip=0, limit=100000)
+    existing_refs = {item.book_reference for item in db_items}
+
+    def _clean_val(v):
+        s = str(v).strip()
+        if s.lower() in ("nan", "none", "", "null"):
+            return None
+        return s
 
     for idx, row in df.iterrows():
         row_num = idx + 2
@@ -51,23 +61,35 @@ def process_inventory_file(db: Session, file_name: str,
         except ValueError:
             condition = ItemCondition.GOOD
 
+        ref = _clean_val(row.get("book_reference", ""))
+
         item = InventoryItem(
             id=None,
-            external_code=str(row.get("external_code", "")).strip() or None,
-            book_reference=str(row.get("book_reference", "")).strip(),
-            title=str(row.get("title", "")).strip(),
-            author=str(row.get("author", "")).strip(),
-            isbn=str(row.get("isbn", "")).strip() or None,
+            external_code=_clean_val(row.get("external_code")),
+            book_reference=ref,
+            title=_clean_val(row.get("title")),
+            author=_clean_val(row.get("author")),
+            isbn=_clean_val(row.get("isbn")),
             quantity_available=qty,
             quantity_reserved=0,
             condition=condition,
-            defects=str(row.get("defects", "")).strip() or None,
-            observations=str(row.get("observations", "")).strip() or None,
+            defects=_clean_val(row.get("defects")),
+            observations=_clean_val(row.get("observations")),
             import_batch_id=batch.id,
             created_at=None,
         )
 
         errors = item.validate()
+        
+        # Validar duplicados
+        if ref in existing_refs:
+            errors.append(f"El book_reference '{ref}' ya existe en la base de datos.")
+        elif ref in seen_references:
+            errors.append(f"El book_reference '{ref}' está duplicado en este mismo archivo.")
+        
+        if ref:
+            seen_references.add(ref)
+
         if errors:
             invalid += 1
             for msg in errors:
@@ -79,6 +101,7 @@ def process_inventory_file(db: Session, file_name: str,
             inventory_repository.create_item(db, item)
             valid += 1
 
+    time.sleep(3)
     status = "completed" if valid > 0 else "failed"
     return inventory_repository.update_batch(db, batch.id, processed, valid, invalid, status)
 

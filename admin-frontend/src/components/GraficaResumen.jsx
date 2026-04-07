@@ -1,15 +1,13 @@
 import React from "react";
 
 const GraficaResumen = ({ lotes }) => {
-  if (!lotes || lotes.length === 0) return null;
-
-  const totalValidos = lotes.reduce((acc, l) => acc + l.valid_rows, 0);
-  const totalInvalidos = lotes.reduce((acc, l) => acc + l.invalid_rows, 0);
+  const totalValidos = lotes?.reduce((acc, l) => acc + (l.valid_rows || 0), 0) || 0;
+  const totalInvalidos = lotes?.reduce((acc, l) => acc + (l.invalid_rows || 0), 0) || 0;
 
   const total = totalValidos + totalInvalidos;
 
-  const porcentajeValidos = total ? (totalValidos / total) * 100 : 0;
-  const porcentajeInvalidos = total ? (totalInvalidos / total) * 100 : 0;
+  const porcentajeValidos = total > 0 ? (totalValidos / total) * 100 : 0;
+  const porcentajeInvalidos = total > 0 ? (totalInvalidos / total) * 100 : 0;
 
   return (
     <div style={container}>

@@ -49,8 +49,8 @@ async def upload(file: UploadFile = File(...), db: Session = Depends(get_db)):
     if ext not in ALLOWED_EXT:
         raise HTTPException(status_code=400, detail=f"Solo se permiten: {ALLOWED_EXT}")
     content = await file.read()
-    if len(content) > 10 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="Archivo demasiado grande (máx 10 MB)")
+    if len(content) > 15 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Archivo demasiado grande (máx 15 MB)")
     try:
         batch = process_inventory_file(db, file.filename, content, ext)
         return _bresp(batch)

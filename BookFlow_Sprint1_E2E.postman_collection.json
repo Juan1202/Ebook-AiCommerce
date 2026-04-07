@@ -1,0 +1,527 @@
+{
+	"info": {
+		"_postman_id": "48a1e841-8f85-4d97-8335-3219771cc0f8",
+		"name": "BookFlow AI Commerce - Sprint 1 E2E",
+		"description": "Colección completa para validación del Sprint 1. Cubre autenticación, carga masiva, calidad de datos, catálogo, enriquecimiento y configuración.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "00. Health Checks",
+			"item": [
+				{
+					"name": "BFF Gateway Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url_raw}}/health",
+							"host": [
+								"{{base_url_raw}}"
+							],
+							"path": [
+								"health"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Auth Service Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/auth/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"health"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Inventory Service Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/inventory/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"inventory",
+								"health"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Catalog Service Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/catalog/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"catalog",
+								"health"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Config Service Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/config/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"config",
+								"health"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "01. Autenticación",
+			"item": [
+				{
+					"name": "Registrar Administrador",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"admin\",\n    \"email\": \"admin@bookflow.com\",\n    \"password\": \"admin123\",\n    \"role\": \"admin\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/auth/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"auth",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login (Admin)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.access_token) {",
+									"    pm.environment.set(\"token\", jsonData.access_token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "username",
+									"value": "admin",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "admin123",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Verificar Token",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/auth/auth/verify",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"auth",
+								"verify"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "02. Gestión de Inventario",
+			"item": [
+				{
+					"name": "Cargar Archivo CSV",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.id) {",
+									"    pm.environment.set(\"batch_id\", jsonData.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"description": "Adjunta el archivo sample_inventory.csv",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/inventory/batches/upload",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"inventory",
+								"batches",
+								"upload"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Historial de Lotes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/inventory/batches",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"inventory",
+								"batches"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Ver Ítems de un Lote",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/inventory/batches/{{batch_id}}/items",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"inventory",
+								"batches",
+								"{{batch_id}}",
+								"items"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "03. Calidad de Datos (Errores)",
+			"item": [
+				{
+					"name": "Ver Errores por Lote",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/inventory/batches/{{batch_id}}/errors",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"inventory",
+								"batches",
+								"{{batch_id}}",
+								"errors"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "04. AI Enrichment Mock",
+			"item": [
+				{
+					"name": "Simular Enriquecimiento de Libro",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"book_reference\": \"COL-001\",\n    \"title\": \"Cien años de soledad\",\n    \"author\": \"Gabriel García Márquez\",\n    \"isbn\": \"9780307474728\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/enrichment/enrich",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"enrichment",
+								"enrich"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "05. Catálogo Comercial",
+			"item": [
+				{
+					"name": "Cargar Todos los Libros",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/catalog/books/?limit=100",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"catalog",
+								"books",
+								""
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "100"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar Libro",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/catalog/books/search?q=Gabriel",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"catalog",
+								"books",
+								"search"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "Gabriel"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Publicar un Libro",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/catalog/books/1/publish",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"catalog",
+								"books",
+								"1",
+								"publish"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "06. Configuración",
+			"item": [
+				{
+					"name": "Ver Parámetros Actuales",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/config/config/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"config",
+								"config",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar Parámetro (Ej: Comision)",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"value\": 15\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/config/config/porcentaje_comision",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"config",
+								"config",
+								"porcentaje_comision"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url_raw",
+			"value": "http://localhost:8009",
+			"type": "string"
+		},
+		{
+			"key": "base_url",
+			"value": "http://localhost:8009/api",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "batch_id",
+			"value": "1",
+			"type": "string"
+		}
+	]
+}

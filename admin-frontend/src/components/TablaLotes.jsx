@@ -1,6 +1,20 @@
-import React from "react";
+import React, { useState } from "react";
+import { exportBatchToCatalog } from "../services/inventoryService";
 
 const TablaLotes = ({ lotes, onSelect }) => {
+  const [exportando, setExportando] = useState(null); // guarda el id del lote en proceso
+
+  const handleExportar = async (loteId) => {
+    setExportando(loteId);
+    try {
+      const res = await exportBatchToCatalog(loteId);
+      alert(`¡Exportación completa!\n\n${res.successCount} libros de ${res.total} fueron publicados con éxito en la tienda comercial.`);
+    } catch (e) {
+      alert("Hubo un error exportando el lote al catálogo: " + e.message);
+    }
+    setExportando(null);
+  };
+
   return (
     <div style={container}>
       <div style={header}>
@@ -8,25 +22,43 @@ const TablaLotes = ({ lotes, onSelect }) => {
         <span>Estado</span>
         <span>Válidos</span>
         <span>Inválidos</span>
-        <span></span>
+        <span>Acciones</span>
       </div>
 
-      {lotes.map((l) => (
-        <div key={l.id} style={row}>
-          <span style={id}>{l.id}</span>
-
-          <span style={getEstadoStyle(l.estado)}>
-            {l.estado}
-          </span>
-
-          <span>{l.valid_rows}</span>
-          <span>{l.invalid_rows}</span>
-
-          <button style={button} onClick={() => onSelect(l)}>
-            Ver
-          </button>
+      {lotes.length === 0 ? (
+        <div style={{ padding: "30px", textAlign: "center", color: "#64748b" }}>
+          No hay lotes de inventario procesados todavía.
         </div>
-      ))}
+      ) : (
+        lotes.map((l) => (
+          <div key={l.id} style={row}>
+            <span style={id}>{l.id}</span>
+
+            <span style={getEstadoStyle(l.estado)}>
+              {l.estado}
+            </span>
+
+            <span>{l.valid_rows}</span>
+            <span>{l.invalid_rows}</span>
+
+            <div style={{ display: "flex", gap: "6px" }}>
+              <button style={button} onClick={() => onSelect(l)}>
+                Ver
+              </button>
+              
+              {l.estado === "COMPLETADO" && (
+                <button 
+                  style={{...button, background: "#0ea5e9", color: "white", border: "none"}} 
+                  onClick={() => handleExportar(l.id)}
+                  disabled={exportando === l.id}
+                >
+                  {exportando === l.id ? "⏳..." : "Exportar 🌐"}
+                </button>
+              )}
+            </div>
+          </div>
+        ))
+      )}
     </div>
   );
 };

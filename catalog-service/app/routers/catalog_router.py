@@ -78,13 +78,13 @@ def create(req: BookCreateRequest, db: Session = Depends(get_db)):
 
 
 @router.get("/search", response_model=List[BookResponse])
-def search(q: str = Query(..., min_length=2), skip: int = 0, limit: int = 20,
+def search(q: str = Query(..., min_length=2), skip: int = 0, limit: int = 100,
            db: Session = Depends(get_db)):
     return [_resp(b) for b in search_books(db, q, skip, limit)]
 
 
 @router.get("/", response_model=List[BookResponse])
-def list_all(skip: int = 0, limit: int = 20, published_only: bool = False,
+def list_all(skip: int = 0, limit: int = 100, published_only: bool = False,
              db: Session = Depends(get_db)):
     return [_resp(b) for b in list_books(db, skip, limit, published_only)]
 

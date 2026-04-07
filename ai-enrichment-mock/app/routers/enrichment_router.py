@@ -45,15 +45,13 @@ class EnrichRequestBody(BaseModel):
             return value
 
         value = value.strip()
-        if value == "":
+        if value == "" or value.lower() == "nan":
             return None
 
         cleaned = value.replace("-", "").replace(" ", "")
-        if not cleaned.isdigit():
-            raise ValueError("isbn debe contener solo números, espacios o guiones")
-
-        if len(cleaned) not in (10, 13):
-            raise ValueError("isbn debe tener 10 o 13 dígitos")
+        if not cleaned.isdigit() or len(cleaned) not in (10, 13):
+            # En lugar de error, devolvemos None para que el enriquecimiento use búsqueda por título
+            return None
 
         return value
 
@@ -64,15 +62,12 @@ class EnrichRequestBody(BaseModel):
             return value
 
         value = value.strip()
-        if value == "":
+        if value == "" or value.lower() == "nan":
             return None
 
         cleaned = value.replace("-", "").replace(" ", "")
-        if not cleaned.isdigit():
-            raise ValueError("issn debe contener solo números, espacios o guiones")
-
-        if len(cleaned) != 8:
-            raise ValueError("issn debe tener 8 dígitos")
+        if not cleaned.isdigit() or len(cleaned) != 8:
+            return None
 
         return value
 

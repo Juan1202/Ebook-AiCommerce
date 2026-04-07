@@ -5,6 +5,7 @@ import Filtros from "../components/Filtros";
 import DetalleLote from "../components/DetalleLote";
 import Resumen from "../components/Resumen";
 import GraficaResumen from "../components/GraficaResumen";
+import UploadInventario from "../components/UploadInventario";
 
 const AdminPage = () => {
   const [lotes, setLotes] = useState([]);
@@ -18,6 +19,12 @@ const AdminPage = () => {
   useEffect(() => {
     getLotes().then(setLotes);
   }, []);
+
+  const handleLoteCreado = (nuevoLote) => {
+    // Reload lotes after a new upload
+    getLotes().then(setLotes);
+    setPagina(1);
+  };
 
   const filtrados = lotes.filter((l) => {
     const coincideEstado =
@@ -57,6 +64,9 @@ const AdminPage = () => {
             Monitoreo y control de cargas de datos
           </p>
         </div>
+
+        {/* CARGA DE INVENTARIO */}
+        <UploadInventario onLoteCreado={handleLoteCreado} />
 
         {/* KPI */}
         <Resumen lotes={lotes} />

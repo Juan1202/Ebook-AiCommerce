@@ -1,13 +1,56 @@
-title,author,book_reference,quantity_available,isbn,condition,defects,observations,external_code
-Cien años de soledad,Gabriel García Márquez,REF-001,5,9780307474728,good,,Edición especial,EXT-001
-Don Quijote de la Mancha,Miguel de Cervantes,REF-002,2,,acceptable,Subrayados en algunas páginas,Primera parte solamente,EXT-002
-1984,George Orwell,REF-003,8,9780451524935,new,,,EXT-003
-El Principito,Antoine de Saint-Exupéry,REF-004,3,9780156012195,like_new,,Incluye ilustraciones originales,EXT-004
-Sapiens: De animales a dioses,Yuval Noah Harari,REF-005,1,9780062316097,good,Portada ligeramente doblada,,EXT-005
-Ficciones,Jorge Luis Borges,REF-006,4,9780802130303,new,,,EXT-006
-La sombra del viento,Carlos Ruiz Zafón,REF-007,6,9788408163435,good,,,EXT-007
-Rayuela,Julio Cortázar,REF-008,2,9788437604572,acceptable,Anotaciones al margen,,EXT-008
-El amor en los tiempos del cólera,Gabriel García Márquez,REF-009,3,9780307389732,good,,,EXT-009
-Fahrenheit 451,Ray Bradbury,REF-010,7,9781451673319,new,,,EXT-010
-,Autor Faltante,REF-011,2,,,,,
-Sin Título,Miguel López,REF-012,-5,,,Cantidad negativa inválida,,
+title,author,book_reference,quantity_available,isbn,condition,external_code,defects,observations
+Cien anos de soledad,Gabriel Garcia Marquez,COL-001,10,9780307474728,new,EXT-001,,Clasico colombiano
+El amor en los tiempos del colera,Gabriel Garcia Marquez,COL-002,5,9780307387790,new,EXT-002,,Clasico moderno
+La voragine,Jose Eustasio Rivera,COL-003,8,9789583000102,good,EXT-003,,Jungla colombiana
+Maria,Jorge Isaacs,COL-004,15,9781503378513,new,EXT-004,,Romanticismo
+El olvido que seremos,Hector Abad Faciolince,COL-005,12,9781644732103,new,EXT-005,,Impactante biografia
+Delirio,Laura Restrepo,COL-006,7,9781400095810,good,EXT-006,,Literatura contemporanea
+Rosario Tijeras,Jorge Franco,COL-007,20,9781603960014,new,EXT-007,,Realismo sucio
+Satanas,Mario Mendoza,COL-008,10,9789584214737,new,EXT-008,,Novela negra
+La tejedora de coronas,German Espinosa,COL-009,4,9788420421377,good,EXT-009,,Barroco colombiano
+Chango el gran putas,Manuel Zapata Olivella,COL-010,6,9789583001222,good,EXT-010,,Epos afrocolombiano
+La casa de los espiritus,Isabel Allende,INT-011,14,9780307474315,new,EXT-011,,Realismo magico chile
+1984,George Orwell,INT-012,25,9780451524935,new,EXT-012,,Distopia clasica
+El Principito,Antoine de Saint-Exupery,INT-013,40,9780156012195,new,EXT-013,,Infantil universal
+Don Quijote de la Mancha,Miguel de Cervantes,INT-014,10,9788424116231,new,EXT-014,,Obra cumbre
+El retrato de Dorian Gray,Oscar Wilde,INT-015,18,9780141439570,new,EXT-015,,Esteticismo
+Harry Potter y la piedra filosofal,J.K. Rowling,INT-016,35,9788478884452,new,EXT-016,,Fantasia
+El Senor de los Anillos,J.R.R. Tolkien,INT-017,15,9780618640157,new,EXT-017,,Epica fantasia
+Orgullo y prejuicio,Jane Austen,INT-018,22,9780141439518,new,EXT-018,,Clasico ingles
+Cronica de una muerte anunciada,Gabriel Garcia Marquez,COL-019,13,9781400034956,new,EXT-019,,Narrativa corta
+Rayuela,Julio Cortazar,INT-020,9,9780307474735,new,EXT-020,,Boom latinoamericano
+Pedro Paramo,Juan Rulfo,INT-021,11,9780802133908,new,EXT-021,,Realismo magico mexico
+Metamorfosis,Franz Kafka,INT-022,30,9781503252448,new,EXT-022,,Existencialismo
+Ensayo sobre la ceguera,Jose Saramago,INT-023,12,9780156006477,new,EXT-023,,Parabola social
+Ficciones,Jorge Luis Borges,INT-024,8,9780307950925,new,EXT-024,,Laberinto borgeano
+El Aleph,Jorge Luis Borges,INT-025,7,9780307950932,new,EXT-025,,Cuentos filosoficos
+Crimen y castigo,Fiodor Dostoievski,INT-026,14,9780143058045,new,EXT-026,,Psicologia humana
+Los miserables,Victor Hugo,INT-027,5,9780451419439,new,EXT-027,,Epica francesa
+Cumbres Borrascosas,Emily Bronte,INT-028,12,9780141439556,new,EXT-028,,Gótico ingles
+Moby Dick,Herman Melville,INT-029,9,9780142437247,new,EXT-029,,Obsesion blanca
+Guerra y paz,Leon Tolstoi,INT-030,4,9780307266477,good,EXT-030,,Historia rusa
+La Odisea,Homero,INT-031,20,9780140268867,new,EXT-031,,Clasico griego
+Frankenstein,Mary Shelley,INT-032,15,9780141439471,new,EXT-032,,Ciencia ficcion
+El tunel,Ernesto Sabato,INT-033,10,9780143128915,new,EXT-033,,Psicologico argentino
+Sobre heroes y tumbas,Ernesto Sabato,INT-034,6,9780307474742,good,EXT-034,,Novela total
+La tregua,Mario Benedetti,INT-035,14,9780307474759,new,EXT-035,,Realismo uruguayo
+Vivir para contarla,Gabriel Garcia Marquez,COL-036,8,9781400034543,new,EXT-036,,Memorias
+Los pasos perdidos,Alejo Carpentier,INT-037,7,9780816640829,good,EXT-037,,Lo real maravilloso
+El siglo de las luces,Alejo Carpentier,INT-038,5,9780307474766,good,EXT-038,,Revolucion caribe
+Noticia de un secuestro,Gabriel Garcia Marquez,COL-039,11,9781400034949,new,EXT-039,,Periodismo narrativo
+El general en su laberinto,Gabriel Garcia Marquez,COL-040,9,9781400034963,new,EXT-040,,Historia simon bolivar
+El coronel no tiene quien le escriba,Gabriel Garcia Marquez,COL-041,12,9780224608350,new,EXT-041,,Esperanza vana
+La hojarasca,Gabriel Garcia Marquez,COL-042,10,9781400034970,new,EXT-042,,Macondo origen
+Relato de un naufrago,Gabriel Garcia Marquez,COL-043,15,9781400034987,new,EXT-043,,Aventura real
+La mala hora,Gabriel Garcia Marquez,COL-044,8,9781400034994,new,EXT-044,,Violencia politica
+Ojos de perro azul,Gabriel Garcia Marquez,COL-045,9,9781400035007,new,EXT-045,,Cuentos juventud
+Doce cuentos peregrinos,Gabriel Garcia Marquez,COL-046,14,9781400035014,new,EXT-046,,Cuentos europa
+Del amor y otros demonios,Gabriel Garcia Marquez,COL-047,10,9781400035021,new,EXT-047,,Inquisición cartagena
+Memoria de mis putas tristes,Gabriel Garcia Marquez,COL-048,15,9781400095803,new,EXT-048,,Ultima novela
+Los funerales de la Mama Grande,Gabriel Garcia Marquez,COL-049,12,9781400035038,new,EXT-049,,Mito costeño
+La increible y triste historia de la candida Erendira,Gabriel Garcia Marquez,COL-050,11,9781400035045,new,EXT-050,,Realismo magico puro
+,Gabriel Garcia Marquez,ERR-001,10,9781400034546,new,EXT-ERR1,,Falta titulo
+Cien anos de soledad,,ERR-002,10,9781400034547,new,EXT-ERR2,,Falta autor
+Error de Referencia,Autor Desconocido,,10,9781400034548,new,EXT-ERR3,,Falta book_reference
+Libro Negativo,Autor Negativo,ERR-004,-5,9781400034549,new,EXT-ERR4,,Cantidad negativa
+Referencia Duplicada,Autor Duplicado,COL-001,10,9781400034550,new,EXT-ERR5,,Referencia ya usada (COL-001)
