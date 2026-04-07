@@ -58,6 +58,17 @@ export async function getCategories() {
   }
 }
 
+const MOCK_CATEGORIES = [
+  { id: 1, name: 'Ficción' },
+  { id: 2, name: 'No Ficción' },
+  { id: 3, name: 'Ciencia' },
+  { id: 4, name: 'Historia' },
+  { id: 5, name: 'Filosofía' },
+  { id: 6, name: 'Tecnología' },
+  { id: 7, name: 'Arte' },
+  { id: 8, name: 'Economía' },
+]
+
 export const getPlaceholderUrl = (title, hexColor, size = '200x300') => {
   const cleanText = title
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
