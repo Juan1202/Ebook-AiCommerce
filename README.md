@@ -20,8 +20,26 @@ Usuario
 ## Inicio rápido
 
 ### Opción A — Docker Compose (recomendado)
+
+**Primera vez o al actualizar desde git:**
 ```bash
-docker-compose up --build
+# 1. Descargar cambios
+git pull origin main
+
+# 2. Eliminar contenedores, imágenes y volúmenes anteriores
+docker compose down -v --rmi all
+
+# 3. Construir y levantar todo desde cero
+docker compose up --build
+```
+
+> ⚠️ El paso `down -v` es obligatorio al actualizar. Sin él, los volúmenes de base de datos anteriores persisten con datos incorrectos y el catálogo aparecerá vacío.
+
+Al iniciar, el `catalog-service` puebla automáticamente la BD con 18 libros de muestra.
+
+**Levantar sin limpiar (si ya tienes datos correctos):**
+```bash
+docker compose up --build
 ```
 
 ### Opción B — Servicios individuales (desarrollo)
