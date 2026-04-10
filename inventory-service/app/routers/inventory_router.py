@@ -39,6 +39,11 @@ def _resp(i) -> ItemResponse:
     )
 
 
+@router.get("/health")
+def health():
+    return {"status": "ok", "service": "inventory-service"}
+
+
 @router.get("/", response_model=List[ItemResponse])
 def list_items(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return [_resp(i) for i in get_all_items(db, skip, limit)]
