@@ -24,6 +24,7 @@ class Book:
     category_id: Optional[int]
     description: Optional[str]
     cover_url: Optional[str]
+    price: Optional[int]
     enriched_flag: bool
     published_flag: bool
     created_at: Optional[datetime]

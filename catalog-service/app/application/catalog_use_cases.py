@@ -7,7 +7,7 @@ from app.infrastructure import catalog_repository
 
 
 def create_book(db: Session, **kwargs) -> Book:
-    book = Book(id=None, enriched_flag=False, created_at=None, updated_at=None, **kwargs)
+    book = Book(id=None, enriched_flag=False, price=kwargs.pop("price", None), created_at=None, updated_at=None, **kwargs)
     errors = book.validate()
     if errors:
         raise ValueError(", ".join(errors))

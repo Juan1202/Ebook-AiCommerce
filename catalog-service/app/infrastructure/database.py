@@ -33,6 +33,7 @@ class BookModel(Base):
     category_id = Column(Integer, nullable=True, index=True)
     description = Column(Text, nullable=True)
     cover_url = Column(String(500), nullable=True)
+    price = Column(Integer, nullable=True)
     enriched_flag = Column(Boolean, default=False)
     published_flag = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)

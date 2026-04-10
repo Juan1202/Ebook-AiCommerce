@@ -26,6 +26,7 @@ class BookCreateRequest(BaseModel):
     category_id: Optional[int] = None
     description: Optional[str] = None
     cover_url: Optional[str] = None
+    price: Optional[int] = None
     published_flag: bool = False
 
 
@@ -54,6 +55,7 @@ class BookResponse(BaseModel):
     category_id: Optional[int]
     description: Optional[str]
     cover_url: Optional[str]
+    price: Optional[int]
     enriched_flag: bool
     published_flag: bool
     created_at: Optional[datetime]
@@ -64,7 +66,7 @@ def _resp(b) -> BookResponse:
         id=b.id, title=b.title, subtitle=b.subtitle, author=b.author,
         publisher=b.publisher, publication_year=b.publication_year, volume=b.volume,
         isbn=b.isbn, issn=b.issn, category_id=b.category_id, description=b.description,
-        cover_url=b.cover_url, enriched_flag=b.enriched_flag,
+        cover_url=b.cover_url, price=b.price, enriched_flag=b.enriched_flag,
         published_flag=b.published_flag, created_at=b.created_at,
     )
 

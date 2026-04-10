@@ -13,6 +13,9 @@ export default function BookCard({ book, categories }) {
   )?.name
 
   const getCoverUrl = () => {
+    // Usar cover_url del API si existe y es una URL real
+    if (book.cover_url && book.cover_url.startsWith('http')) return book.cover_url
+
     const title = book.title?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') || ''
 
     if (title.includes('cien anos') || title.includes('cien a'))
@@ -69,7 +72,8 @@ export default function BookCard({ book, categories }) {
     if (title.includes('pensar rapido') || title.includes('pensar r'))
       return 'https://images.cdn1.buscalibre.com/fit-in/360x360/ac/43/ac43444704b60dea17e32e70b454b102.jpg'
 
-    return 'https://via.placeholder.com/200x300/1a1a2e/ffffff?text=📚'
+    const label = encodeURIComponent((book.title || 'Libro').slice(0, 15))
+    return `https://placehold.co/200x300/1B4332/FFFFFF?text=${label}`
   }
 
   return (
@@ -95,6 +99,10 @@ export default function BookCard({ book, categories }) {
       <img
         src={getCoverUrl()}
         alt={book.title}
+        onError={e => {
+          const label = encodeURIComponent((book.title || 'Libro').slice(0, 15))
+          e.target.src = `https://placehold.co/200x300/2D6A4F/FFFFFF?text=${label}`
+        }}
         style={{
           width: '100%',
           height: '220px',

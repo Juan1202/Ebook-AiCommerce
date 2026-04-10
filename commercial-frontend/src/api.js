@@ -91,7 +91,7 @@ const MOCK_BOOKS = [
     isbn: '978-0-06-088328-7',
     publisher: 'Editorial Sudamericana',
     description: 'La obra maestra del realismo mágico latinoamericano.',
-    cover_url: 'https://via.placeholder.com/200x300/4A90E2/FFFFFF?text=Cien+A%C3%B1os',
+    cover_url: 'https://images.cdn3.buscalibre.com/fit-in/360x360/61/8d/618d227e8967274cd9589a549adff52d.jpg',
     category_id: 1,
     published: true,
     price: 49000
@@ -104,7 +104,7 @@ const MOCK_BOOKS = [
     isbn: '978-84-376-0494-7',
     publisher: 'Cátedra',
     description: 'La primera novela moderna de la literatura occidental.',
-    cover_url: 'https://via.placeholder.com/200x300/E2904A/FFFFFF?text=El+Quijote',
+    cover_url: 'https://images.cdn2.buscalibre.com/fit-in/360x360/73/b6/73b6fd96c31d26e2b6a3531808c1188c.jpg',
     category_id: 1,
     published: true,
     price: 41000
@@ -117,7 +117,7 @@ const MOCK_BOOKS = [
     isbn: '978-0-452-28423-4',
     publisher: 'Secker & Warburg',
     description: 'Una distopía sobre el totalitarismo y la vigilancia.',
-    cover_url: 'https://via.placeholder.com/200x300/4AE290/FFFFFF?text=1984',
+    cover_url: 'https://http2.mlstatic.com/D_NQ_NP_878597-MLA73472699954_122023-O.webp',
     category_id: 1,
     published: true,
     price: 49000
@@ -130,7 +130,7 @@ const MOCK_BOOKS = [
     isbn: '978-0-553-38016-3',
     publisher: 'Bantam Books',
     description: 'Cosmología para el gran público.',
-    cover_url: 'https://via.placeholder.com/200x300/904AE2/FFFFFF?text=Hawking',
+    cover_url: 'https://images.cdn2.buscalibre.com/fit-in/360x360/dc/b9/dcb9fcb5d04edddf0465a29ed4c6be6f.jpg',
     category_id: 3,
     published: true,
     price: 45000
@@ -143,7 +143,7 @@ const MOCK_BOOKS = [
     isbn: '978-0-14-044501-3',
     publisher: 'Penguin',
     description: 'Tratado militar clásico de la China antigua.',
-    cover_url: 'https://via.placeholder.com/200x300/E24A4A/FFFFFF?text=Sun+Tzu',
+    cover_url: 'https://www.planetadelibros.com.co/usuaris/libros/fotos/375/original/374706_portada_el-arte-de-la-guerra_antonio-francisco-rodriguez-esteban_202310231102.jpg',
     category_id: 7,
     published: true,
     price: 39900
@@ -156,7 +156,7 @@ const MOCK_BOOKS = [
     isbn: '978-84-206-3001-2',
     publisher: 'Alianza',
     description: 'Cuentos fantásticos y filosóficos del maestro argentino.',
-    cover_url: 'https://via.placeholder.com/200x300/4AE2E2/FFFFFF?text=El+Aleph',
+    cover_url: 'https://images.cdn3.buscalibre.com/fit-in/360x360/41/a6/41a665cae10e456979c5475375eb9f2d.jpg',
     category_id: 1,
     published: true,
     price: 36190
@@ -169,7 +169,7 @@ const MOCK_BOOKS = [
     isbn: '978-84-254-5205-5',
     publisher: 'Herder Editorial',
     description: 'Hallar propósito en la adversidad extrema.',
-    cover_url: 'https://via.placeholder.com/200x300/E67E22/FFFFFF?text=El+hombre+en+busca+de+sentido',
+    cover_url: 'https://images.cdn1.buscalibre.com/fit-in/360x360/92/19/9219f95b47e9354ec97aa899104f705a.jpg',
     category_id: 2,
     published: true,
     price: 61000
@@ -182,7 +182,7 @@ const MOCK_BOOKS = [
     isbn: '978-84-1119-115-7',
     publisher: 'Diana Editorial',
     description: 'Cómo crear buenos hábitos y romper los malos.',
-    cover_url: 'https://via.placeholder.com/200x300/D35400/FFFFFF?text=Habitos+Atomicos',
+    cover_url: 'https://images.cdn1.buscalibre.com/fit-in/360x360/92/19/9219f95b47e9354ec97aa899104f705a.jpg',
     category_id: 2,
     published: true,
     price: 33900
@@ -195,7 +195,7 @@ const MOCK_BOOKS = [
     isbn: '978-84-08-05304-0',
     publisher: 'Editorial Planeta',
     description: 'Una exploración del universo y nuestra posición en él.',
-    cover_url: 'https://via.placeholder.com/200x300/4AE2E2/FFFFFF?text=Cosmos',
+    cover_url: 'https://images.cdn2.buscalibre.com/fit-in/520x520/b6/43/b64396bfa3dff8754439f8127768507c.jpg',
     category_id: 3,
     published: true,
     price: 199000
@@ -208,7 +208,7 @@ const MOCK_BOOKS = [
     isbn: '978-84-206-7005-8',
     publisher: 'Alianza Editorial',
     description: 'Una exploración del universo y nuestra posición en él.',
-    cover_url: 'https://via.placeholder.com/200x300/4AE2E2/FFFFFF?text=historia+del+arte',
+    cover_url: 'https://0.academia-photos.com/attachment_thumbnails/104392808/mini_magick20230720-1-qdg1s.png?1689830775',
     category_id: 7,
     published: true,
     price: 44900
@@ -221,7 +221,7 @@ const MOCK_BOOKS = [
     isbn: '978-84-9992-421-2',
     publisher: 'Debate',
     description: 'Historia del Homo sapiens y su dominio global.',
-    cover_url: 'https://via.placeholder.com/200x300/4AE2E2/FFFFFF?text=sapiens',
+    cover_url: 'https://imagessl8.casadellibro.com/a/l/t5/18/9788466347518.jpg',
     category_id: 4,
     published: true,
     price: 60000
@@ -234,7 +234,7 @@ const MOCK_BOOKS = [
     isbn: '978-84-8306-861-8',
     publisher: 'Debate',
     description: 'Por qué triunfan las civilizaciones.',
-    cover_url: 'https://via.placeholder.com/200x300/4AE2E2/FFFFFF?text=armas+germenes+acero',
+    cover_url: 'https://images.cdn2.buscalibre.com/fit-in/360x360/dc/b9/dcb9fcb5d04edddf0465a29ed4c6be6f.jpg',
     category_id: 4,
     published: true,
     price: 69000
@@ -247,7 +247,7 @@ const MOCK_BOOKS = [
     isbn: '978-84-7844-815-9',
     publisher: 'Siruela',
     description: 'Historia de la filosofía como aventura.',
-    cover_url: 'https://via.placeholder.com/200x300/9B59B6/FFFFFF?text=El+mundo+de+Sofia',
+    cover_url: 'https://images.cdn3.buscalibre.com/fit-in/360x360/41/a6/41a665cae10e456979c5475375eb9f2d.jpg',
     category_id: 5,
     published: true,
     price: 56999
@@ -260,7 +260,7 @@ const MOCK_BOOKS = [
     isbn: '978-84-1012-115-7',
     publisher: 'Editorial Reverté',
     description: 'Reflexiones estoicas.',
-    cover_url: 'https://via.placeholder.com/200x300/8E44AD/FFFFFF?text=Meditaciones',
+    cover_url: 'https://images.cdn1.buscalibre.com/fit-in/360x360/ac/43/ac43444704b60dea17e32e70b454b102.jpg',
     category_id: 5,
     published: true,
     price: 39000
@@ -273,7 +273,7 @@ const MOCK_BOOKS = [
     isbn: '978-84-663-5991-7',
     publisher: 'Debolsillo',
     description: 'Historia de la revolución digital.',
-    cover_url: 'https://via.placeholder.com/200x300/3498DB/FFFFFF?text=Los+Innovadores',
+    cover_url: 'https://images.cdn3.buscalibre.com/fit-in/360x360/61/8d/618d227e8967274cd9589a549adff52d.jpg',
     category_id: 6,
     published: true,
     price: 54900
@@ -286,7 +286,7 @@ const MOCK_BOOKS = [
     isbn: '978-84-493-3693-5',
     publisher: 'Paidós',
     description: 'Análisis de las big tech.',
-    cover_url: 'https://via.placeholder.com/200x300/2980B9/FFFFFF?text=Capitalismo+Vigilancia',
+    cover_url: 'https://www.planetadelibros.com.mx/usuaris/libros/fotos/342/original/portada_la-era-del-capitalismo-de-la-vigilancia_shoshana-zuboff_202109032036.jpg',
     category_id: 6,
     published: true,
     price: 146150
@@ -299,7 +299,7 @@ const MOCK_BOOKS = [
     isbn: '978-84-663-7300-5',
     publisher: 'Aguilar',
     description: 'Finanzas personales.',
-    cover_url: 'https://via.placeholder.com/200x300/27AE60/FFFFFF?text=Padre+Rico+Padre+Pobre',
+    cover_url: 'https://m.media-amazon.com/images/I/81h9BBn4B4L._AC_UF1000,1000_QL80_.jpg',
     category_id: 8,
     published: true,
     price: 69000
@@ -312,7 +312,7 @@ const MOCK_BOOKS = [
     isbn: '978-84-8306-861-8',
     publisher: 'Debate',
     description: 'Psicología del pensamiento.',
-    cover_url: 'https://via.placeholder.com/200x300/229954/FFFFFF?text=Pensar+Rapido+Despacio',
+    cover_url: 'https://images.cdn1.buscalibre.com/fit-in/360x360/ac/43/ac43444704b60dea17e32e70b454b102.jpg',
     category_id: 8,
     published: true,
     price: 85000
