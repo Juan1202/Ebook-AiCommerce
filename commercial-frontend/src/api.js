@@ -4,46 +4,57 @@ const BFF = import.meta.env.VITE_BFF_URL || 'http://localhost:8009'
 
 const http = axios.create({
   baseURL: BFF,
-  timeout: 5000
+  timeout: 8000
 })
+
+export const PAGE_SIZE = 20
 
 export async function getBooks(params = {}) {
   try {
     const r = await http.get('/api/catalog/books/', { params })
-    return r.data
+    // BFF may return { items, total } or plain array
+    const raw = r.data
+    if (Array.isArray(raw)) return { items: raw, total: raw.length }
+    if (raw.items) return raw
+    return { items: [], total: 0 }
   } catch {
-    return MOCK_BOOKS
+    const filtered = applyMockFilters(MOCK_BOOKS, params)
+    const page = params.page || 1
+    const limit = params.limit || PAGE_SIZE
+    const start = (page - 1) * limit
+    return { items: filtered.slice(start, start + limit), total: filtered.length }
   }
 }
 
-
-export async function searchBooks(q) {
+export async function searchBooks(q, params = {}) {
   try {
-    const r = await http.get('/api/catalog/books/search', {
-      params: { q }
-    })
-    return r.data
+    const r = await http.get('/api/catalog/books/', { params: { q, ...params } })
+    const raw = r.data
+    if (Array.isArray(raw)) return { items: raw, total: raw.length }
+    if (raw.items) return raw
+    return { items: [], total: 0 }
   } catch {
-    // 🔥 FIX: ahora también busca por ISBN correctamente
     const cleanQuery = q.toLowerCase().replace(/[-\s]/g, '')
-
-    return MOCK_BOOKS.filter(b => {
+    const matched = MOCK_BOOKS.filter(b => {
       const isbn = (b.isbn || '').toLowerCase().replace(/[-\s]/g, '')
-
       return (
         b.title.toLowerCase().includes(q.toLowerCase()) ||
         b.author.toLowerCase().includes(q.toLowerCase()) ||
         isbn.includes(cleanQuery)
       )
     })
+    const page = params.page || 1
+    const limit = params.limit || PAGE_SIZE
+    const start = (page - 1) * limit
+    return { items: matched.slice(start, start + limit), total: matched.length }
   }
 }
-
 
 export async function getBook(id) {
   try {
     const r = await http.get(`/api/catalog/books/${id}`)
-    return r.data
+    const data = r.data
+    return Array.isArray(data) ? data[0] : data
   } catch {
     return MOCK_BOOKS.find(b => b.id === Number(id)) || null
   }
@@ -52,10 +63,18 @@ export async function getBook(id) {
 export async function getCategories() {
   try {
     const r = await http.get('/api/catalog/categories/')
-    return r.data
+    return Array.isArray(r.data) ? r.data : MOCK_CATEGORIES
   } catch {
     return MOCK_CATEGORIES
   }
+}
+
+function applyMockFilters(books, params) {
+  let result = [...books]
+  if (params.category_id) result = result.filter(b => b.category_id === params.category_id)
+  if (params.min_price) result = result.filter(b => (b.suggested_price || b.price || 0) >= Number(params.min_price))
+  if (params.max_price) result = result.filter(b => (b.suggested_price || b.price || 0) <= Number(params.max_price))
+  return result
 }
 
 const MOCK_CATEGORIES = [

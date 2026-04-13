@@ -1,15 +1,64 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { getBooks, searchBooks, getCategories } from './api'
+import { getBooks, searchBooks, getCategories, PAGE_SIZE } from './api'
 import BookCard from './components/BookCard'
 import BookDetail from './components/BookDetail'
 import Cart from './components/Cart'
+import SearchBar from './components/SearchBar'
+import CatalogFilters from './components/CatalogFilters'
+
+const SKELETON_COUNT = PAGE_SIZE
+
+function SkeletonCard() {
+  return (
+    <div className="skeleton-card">
+      <div className="skeleton-cover skeleton-pulse" />
+      <div className="skeleton-body">
+        <div className="skeleton-line skeleton-pulse" style={{ width: '85%' }} />
+        <div className="skeleton-line skeleton-pulse" style={{ width: '60%', marginTop: '6px' }} />
+        <div className="skeleton-line skeleton-pulse" style={{ width: '40%', marginTop: '10px' }} />
+      </div>
+    </div>
+  )
+}
+
+function Pagination({ page, total, pageSize, onChange }) {
+  const totalPages = Math.ceil(total / pageSize)
+  if (totalPages <= 1) return null
+
+  return (
+    <div className="pagination">
+      <button
+        className="page-btn"
+        disabled={page <= 1}
+        onClick={() => onChange(page - 1)}
+      >
+        ← Anterior
+      </button>
+
+      <span className="page-info">
+        Página {page} de {totalPages}
+      </span>
+
+      <button
+        className="page-btn"
+        disabled={page >= totalPages}
+        onClick={() => onChange(page + 1)}
+      >
+        Siguiente →
+      </button>
+    </div>
+  )
+}
 
 function Catalogo() {
   const [books, setBooks] = useState([])
+  const [total, setTotal] = useState(0)
   const [categories, setCategories] = useState([])
   const [selectedCategory, setSelectedCategory] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [filters, setFilters] = useState({ condition: '', minPrice: '', maxPrice: '' })
+  const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -23,32 +72,51 @@ function Catalogo() {
     setLoading(true)
     setError(null)
 
+    const params = {
+      page,
+      limit: PAGE_SIZE,
+      ...(selectedCategory ? { category_id: selectedCategory } : {}),
+      ...(filters.condition ? { condition: filters.condition } : {}),
+      ...(filters.minPrice ? { min_price: filters.minPrice } : {}),
+      ...(filters.maxPrice ? { max_price: filters.maxPrice } : {}),
+    }
+
     const load = searchQuery.trim()
-      ? searchBooks(searchQuery)
-      : getBooks(selectedCategory ? { category_id: selectedCategory } : {})
+      ? searchBooks(searchQuery, params)
+      : getBooks(params)
 
     load
-      .then(data => {
-        setBooks(data)
+      .then(({ items, total: t }) => {
+        setBooks(items)
+        setTotal(t)
         setLoading(false)
       })
       .catch(() => {
-        setError("Error cargando libros")
+        setError('Error cargando libros')
         setLoading(false)
       })
-  }, [searchQuery, selectedCategory])
+  }, [searchQuery, selectedCategory, filters, page])
 
-  const filtered = selectedCategory && !searchQuery.trim()
-    ? books.filter(b => b.category_id === selectedCategory)
-    : books
-
-  const activeCatName = categories?.find(
-    c => c.id === selectedCategory
-  )?.name
-
-  if (error) {
-    return <p>{error}</p>
+  const handleSearch = (q) => {
+    setSearchQuery(q)
+    setPage(1)
   }
+
+  const handleCategorySelect = (catId) => {
+    setSelectedCategory(catId)
+    setSearchQuery('')
+    setPage(1)
+  }
+
+  const handleFiltersChange = (newFilters) => {
+    setFilters(newFilters)
+    setPage(1)
+  }
+
+  const activeCatName = categories?.find(c => c.id === selectedCategory)?.name
+  const hasActiveFilters = filters.condition || filters.minPrice || filters.maxPrice
+
+  if (error) return <p className="state-container">{error}</p>
 
   return (
     <>
@@ -63,23 +131,14 @@ function Catalogo() {
             </div>
           </div>
 
-          <div className="search-wrap">
-            <span className="search-icon">🔍</span>
-            <input
-              className="search-input"
-              type="text"
-              placeholder="Buscar título, autor o ISBN..."
-              value={searchQuery}
-              onChange={e => {
-                setSearchQuery(e.target.value)
-                setSelectedCategory(null)
-              }}
-            />
-          </div>
+          <SearchBar
+            value={searchQuery}
+            onChange={handleSearch}
+          />
 
           {!loading && (
             <span className="header-count">
-              {filtered.length} libro{filtered.length !== 1 ? 's' : ''}
+              {total} libro{total !== 1 ? 's' : ''}
             </span>
           )}
         </div>
@@ -90,10 +149,7 @@ function Catalogo() {
         <div className="cat-bar-inner">
           <button
             className={`cat-chip${selectedCategory === null ? ' active' : ''}`}
-            onClick={() => {
-              setSelectedCategory(null)
-              setSearchQuery('')
-            }}
+            onClick={() => handleCategorySelect(null)}
           >
             Todos
           </button>
@@ -102,16 +158,20 @@ function Catalogo() {
             <button
               key={c.id}
               className={`cat-chip${selectedCategory === c.id ? ' active' : ''}`}
-              onClick={() => {
-                setSelectedCategory(c.id)
-                setSearchQuery('')
-              }}
+              onClick={() => handleCategorySelect(c.id)}
             >
               {c.name}
             </button>
           ))}
         </div>
       </nav>
+
+      {/* FILTROS */}
+      <div className="filters-wrap">
+        <div className="filters-inner">
+          <CatalogFilters filters={filters} onChange={handleFiltersChange} />
+        </div>
+      </div>
 
       {/* CONTENIDO */}
       <main className="store-main">
@@ -125,39 +185,48 @@ function Catalogo() {
           </h2>
 
           {!loading && (
-            <span className="section-count">
-              {filtered.length} títulos
-            </span>
+            <span className="section-count">{total} títulos</span>
           )}
         </div>
 
         {loading ? (
-          <div className="state-container">
-            <span className="state-icon">⏳</span>
-            <p className="state-title">Cargando catálogo...</p>
+          <div className="book-grid">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
           </div>
-        ) : filtered.length === 0 ? (
+        ) : books.length === 0 ? (
           <div className="state-container">
             <span className="state-icon">🔍</span>
             <p className="state-title">No se encontraron libros</p>
             <p className="state-sub">
-              Intenta con otro término o navega por categorías
+              {hasActiveFilters
+                ? 'Intenta ajustar los filtros o limpiarlos'
+                : 'Intenta con otro término o navega por categorías'}
             </p>
           </div>
         ) : (
-          <div className="book-grid">
-            {filtered.map(book => (
-              <BookCard 
-                key={book.id} 
-                book={book} 
-                categories={categories}
-              />
-            ))}
-          </div>
+          <>
+            <div className="book-grid">
+              {books.map(book => (
+                <BookCard
+                  key={book.id}
+                  book={book}
+                  categories={categories}
+                />
+              ))}
+            </div>
+
+            <Pagination
+              page={page}
+              total={total}
+              pageSize={PAGE_SIZE}
+              onChange={setPage}
+            />
+          </>
         )}
       </main>
 
-      {/* 🛒 CARRITO AGREGADO */}
       <Cart />
     </>
   )
