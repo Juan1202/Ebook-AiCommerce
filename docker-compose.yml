@@ -12,6 +12,7 @@ volumes:
   inventory-db-data:
   catalog-db-data:
   config-db-data:
+  pricing-db-data:
 
 services:
 
@@ -74,6 +75,22 @@ services:
       POSTGRES_DB: ${DB_NAME_CONFIG}
     volumes:
       - config-db-data:/var/lib/postgresql/data
+    networks:
+      - bookflow-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pricing-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${DB_NAME_PRICING}
+    volumes:
+      - pricing-db-data:/var/lib/postgresql/data
     networks:
       - bookflow-network
     healthcheck:
@@ -160,6 +177,20 @@ services:
       - bookflow-network
     restart: on-failure
 
+  pricing-service:
+    build: ./pricing-service
+    ports:
+      - "8005:8005"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pricing-db:5432/${DB_NAME_PRICING}
+      EBAY_APP_ID: ${EBAY_APP_ID}
+    depends_on:
+      pricing-db:
+        condition: service_healthy
+    networks:
+      - bookflow-network
+    restart: on-failure
+
   bff-gateway:
     build: ./bff-gateway
     ports:
@@ -171,6 +202,7 @@ services:
       AI_ENRICHMENT_URL: http://ai-enrichment-mock:8006
       DATA_QUALITY_URL: http://data-quality-module:8007
       CONFIG_MODULE_URL: http://config-module:8008
+      PRICING_SERVICE_URL: http://pricing-service:8005
     depends_on:
       - auth-service
       - inventory-service
@@ -178,6 +210,7 @@ services:
       - ai-enrichment-mock
       - data-quality-module
       - config-module
+      - pricing-service
     networks:
       - bookflow-network
     restart: on-failure

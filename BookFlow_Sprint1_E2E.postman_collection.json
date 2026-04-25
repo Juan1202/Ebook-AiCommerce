@@ -311,6 +311,294 @@
 			]
 		},
 		{
+			"name": "DEV 03 - Pricing Service (IA)",
+			"item": [
+				{
+					"name": "Calcular Precio - NUEVO",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"pm.test(\"Has suggested price\", function () { pm.expect(pm.response.json().suggested_price).to.be.a('number'); });",
+									"pm.test(\"Condition factor is 1.0 for NUEVO\", function () { pm.expect(pm.response.json().condition_factor).to.eql(1.0); });",
+									"pm.test(\"Price meets minimum threshold\", function () { pm.expect(pm.response.json().suggested_price).to.be.at.least(5.0); });",
+									"var jsonData = pm.response.json();",
+									"pm.environment.set(\"current_decision_id\", jsonData.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"book_id\": \"book-001\",\n    \"book_title\": \"Clean Code: A Handbook of Agile Software Craftsmanship\",\n    \"condition\": \"NUEVO\",\n    \"author\": \"Robert C. Martin\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/pricing/calculate",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"pricing",
+								"calculate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Calcular Precio - BUENO",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"pm.test(\"Condition factor is 0.8 for BUENO\", function () { pm.expect(pm.response.json().condition_factor).to.eql(0.8); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"book_id\": \"book-002\",\n    \"book_title\": \"The Pragmatic Programmer\",\n    \"condition\": \"BUENO\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/pricing/calculate",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"pricing",
+								"calculate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Calcular Precio - ACEPTABLE",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"pm.test(\"Condition factor is 0.6 for ACEPTABLE\", function () { pm.expect(pm.response.json().condition_factor).to.eql(0.6); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"book_id\": \"book-003\",\n    \"book_title\": \"Design Patterns\",\n    \"condition\": \"ACEPTABLE\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/pricing/calculate",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"pricing",
+								"calculate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Calcular Precio - DETERIORADO",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"pm.test(\"Condition factor is 0.4 for DETERIORADO\", function () { pm.expect(pm.response.json().condition_factor).to.eql(0.4); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"book_id\": \"book-004\",\n    \"book_title\": \"Refactoring\",\n    \"condition\": \"DETERIORADO\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/pricing/calculate",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"pricing",
+								"calculate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener Último Precio",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"pm.test(\"Returns pricing decision\", function () { pm.expect(pm.response.json()).to.have.property('suggested_price'); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/pricing/book-001",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"pricing",
+								"book-001"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Historial de Precios",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"pm.test(\"Returns array of decisions\", function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/pricing/history/book-001",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"pricing",
+								"history",
+								"book-001"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Explicación de Decisión",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"pm.test(\"Returns explanation\", function () { pm.expect(pm.response.json()).to.have.property('explanation'); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/pricing/explanation/{{current_decision_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"pricing",
+								"explanation",
+								"{{current_decision_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Estado de APIs Externas",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"pm.test(\"Returns API status\", function () { pm.expect(pm.response.json()).to.have.property('source'); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/pricing/external-apis/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"pricing",
+								"external-apis",
+								"status"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "DEV 03 & 05 - Catalog Service",
 			"item": [
 				{
