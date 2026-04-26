@@ -4,15 +4,15 @@ from fastapi import Request, Response, HTTPException
 
 TIMEOUT = 5.0
 
-# En este proyecto solo están activos quality y (opcionalmente) los demás.
-# Si un servicio no está corriendo, el gateway devuelve 503 controlado.
 SERVICE_MAP = {
-    "auth":      os.getenv("AUTH_SERVICE_URL",      "http://auth-service:8001"),
-    "inventory": os.getenv("INVENTORY_SERVICE_URL", "http://inventory-service:8002"),
-    "catalog":   os.getenv("CATALOG_SERVICE_URL",   "http://catalog-service:8003"),
-    "enrichment":os.getenv("AI_ENRICHMENT_URL",     "http://ai-enrichment-mock:8006"),
-    "quality":   os.getenv("DATA_QUALITY_URL",      "http://data-quality-module:8007"),
-    "config":    os.getenv("CONFIG_MODULE_URL",      "http://config-module:8008"),
+    "auth":            os.getenv("AUTH_SERVICE_URL",       "http://auth-service:8001"),
+    "inventory":       os.getenv("INVENTORY_SERVICE_URL",  "http://inventory-service:8002"),
+    "catalog":         os.getenv("CATALOG_SERVICE_URL",    "http://catalog-service:8003"),
+    "enrichment":      os.getenv("AI_ENRICHMENT_URL",      "http://ai-enrichment-mock:8006"),
+    "enrichment-real": os.getenv("ENRICHMENT_SERVICE_URL", "http://ai-enrichment-service:8004"),
+    "pricing":         os.getenv("PRICING_SERVICE_URL",    "http://pricing-service:8005"),
+    "quality":         os.getenv("DATA_QUALITY_URL",       "http://data-quality-module:8007"),
+    "config":          os.getenv("CONFIG_MODULE_URL",      "http://config-module:8008"),
 }
 
 
@@ -27,7 +27,7 @@ async def proxy_request(service_name: str, path: str, request: Request) -> Respo
 
     try:
         body = await request.body()
-        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+        async with httpx.AsyncClient(timeout=TIMEOUT, follow_redirects=True) as client:
             upstream = await client.request(
                 method=request.method,
                 url=url,

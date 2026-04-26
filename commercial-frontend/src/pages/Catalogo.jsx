@@ -1,96 +1,133 @@
-import { useState, useEffect } from 'react'
-import { getBooks, searchBooks, getCategories } from './api'
-import BookCard from './components/BookCard'
+import { useEffect, useMemo, useState } from 'react'
+import { getBooks, getCategories } from '../api'
+import BookCard from '../components/BookCard'
+import CatalogFilters from '../components/CatalogFilters'
+import SearchBar from '../components/SearchBar'
+
+function getStock(book) {
+  return book.stock ?? book.available_units ?? book.unidades_disponibles ?? book.units_available ?? null
+}
+
+function getCondition(book) {
+  return book.condition ?? book.estado ?? book.estado_libro ?? book.book_condition ?? ''
+}
 
 export default function Catalogo() {
   const [books, setBooks] = useState([])
   const [categories, setCategories] = useState([])
-  const [selectedCategory, setSelectedCategory] = useState(null)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+
+  const [filters, setFilters] = useState({
+    category_id: '',
+    condition: '',
+    publisher: '',
+    publication_year: '',
+    min_price: '',
+    max_price: ''
+  })
 
   useEffect(() => {
-    getCategories().then(setCategories)
+    async function load() {
+      setLoading(true)
+
+      const [booksData, categoriesData] = await Promise.all([
+        getBooks(),
+        getCategories()
+      ])
+
+      setBooks(booksData.items || [])
+      setCategories(categoriesData || [])
+      setLoading(false)
+    }
+
+    load()
   }, [])
 
-  useEffect(() => {
-    setLoading(true)
-    setError(null)
+  const filteredBooks = useMemo(() => {
+    const cleanQuery = query.trim().toLowerCase()
 
-    const load = searchQuery.trim()
-      ? searchBooks(searchQuery)
-      : getBooks(selectedCategory ? { category_id: selectedCategory } : {})
+    return books.filter(book => {
+      const price = Number(book.price || book.suggested_price || 0)
+      const condition = String(getCondition(book)).toLowerCase()
+      const stock = getStock(book)
 
-    load
-      .then(data => {
-        setBooks(data)
-        setLoading(false)
-      })
-      .catch(() => {
-        setError("Error al cargar el catálogo")
-        setLoading(false)
-      })
-  }, [searchQuery, selectedCategory])
+      if (cleanQuery) {
+        const text = `
+          ${book.title || ''}
+          ${book.author || ''}
+          ${book.isbn || ''}
+          ${book.publisher || ''}
+        `.toLowerCase()
 
-  const filtered = selectedCategory && !searchQuery.trim()
-    ? books.filter(b => b.category_id === selectedCategory)
-    : books
+        if (!text.includes(cleanQuery)) return false
+      }
 
-  const activeCatName = categories.find(c => c.id === selectedCategory)?.name
+      if (filters.category_id && Number(book.category_id) !== Number(filters.category_id)) {
+        return false
+      }
 
-  if (error) {
-    return <p>{error}</p>
-  }
+      if (filters.condition) {
+        if (!condition.includes(filters.condition.toLowerCase())) {
+          return false
+        }
+      }
+
+      if (filters.publisher && !String(book.publisher || '').toLowerCase().includes(filters.publisher.toLowerCase())) {
+        return false
+      }
+
+      if (filters.publication_year && String(book.publication_year || '') !== String(filters.publication_year)) {
+        return false
+      }
+
+      if (filters.min_price && price < Number(filters.min_price)) {
+        return false
+      }
+
+      if (filters.max_price && price > Number(filters.max_price)) {
+        return false
+      }
+
+      return true
+    })
+  }, [books, query, filters])
 
   return (
-    <>
-      <header className="store-header">
-        <h1>BookFlow</h1>
-        <input
-          type="text"
-          placeholder="Buscar libro..."
-          value={searchQuery}
-          onChange={e => {
-            setSearchQuery(e.target.value)
-            setSelectedCategory(null)
-          }}
-        />
-      </header>
+    <main className="catalog-page">
+      <section className="catalog-toolbar">
+        <SearchBar value={query} onChange={setQuery} />
+        <span className="total-books">{filteredBooks.length} libros</span>
+      </section>
 
-      <div>
-        <button onClick={() => setSelectedCategory(null)}>Todos</button>
-        {categories.map(c => (
-          <button key={c.id} onClick={() => {
-            setSelectedCategory(c.id)
-            setSearchQuery('')
-          }}>
-            {c.name}
-          </button>
-        ))}
-      </div>
+      <CatalogFilters
+        categories={categories}
+        filters={filters}
+        setFilters={setFilters}
+      />
 
-      <h2>
-        {searchQuery
-          ? `Resultados para "${searchQuery}"`
-          : activeCatName || 'Catálogo completo'}
-      </h2>
+      <section className="catalog-content">
+        <div className="catalog-header">
+          <h1>Catálogo completo</h1>
+          <span>{filteredBooks.length} títulos</span>
+        </div>
 
-      {loading ? (
-        <p>Cargando...</p>
-      ) : filtered.length === 0 ? (
-        <p>No hay libros</p>
-      ) : (
-        <div className="book-grid">
-          {filtered.map(book => (
-            <BookCard 
-                key={book.id} 
-                book={book} 
-                categories={categories} 
+        {loading && <p className="loading">Cargando catálogo...</p>}
+
+        {!loading && filteredBooks.length === 0 && (
+          <p className="empty">No se encontraron libros con los filtros seleccionados.</p>
+        )}
+
+        <div className="books-grid">
+          {filteredBooks.map(book => (
+            <BookCard
+              key={book.id}
+              book={book}
+              categories={categories}
             />
           ))}
         </div>
-      )}
-    </>
+      </section>
+    </main>
   )
 }
