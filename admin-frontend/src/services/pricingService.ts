@@ -1,0 +1,38 @@
+import axios from "axios";
+
+const API = "http://localhost:8000/api/admin/pricing";
+
+// 🔹 Obtener lista de libros con precios
+export const getPricingList = async () => {
+  const res = await axios.get(`${API}/list`);
+  return res.data;
+};
+
+// 🔹 Recalcular precio
+export const recalculatePrice = async (book_id: string) => {
+  const res = await axios.post(`${API}/calculate`, { book_id });
+  return res.data;
+};
+
+// 🔹 Obtener historial por libro
+export const getPriceHistory = async (book_id: string) => {
+  const res = await axios.get(`${API}/history/${book_id}`);
+  return res.data;
+};
+
+// 🔹 Obtener reportes globales
+export const getReports = async () => {
+  const res = await axios.get(`${API}/reports`);
+  return res.data;
+};
+
+// 🔹 Configuración
+export const getConfig = async () => {
+  const res = await axios.get(`${API}/config`);
+  return res.data;
+};
+
+export const saveConfig = async (config: any) => {
+  const res = await axios.post(`${API}/config`, config);
+  return res.data;
+};
