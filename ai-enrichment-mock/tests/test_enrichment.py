@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 from app.main import app
+from app.infrastructure import audit_client
 
 client = TestClient(app)
 
@@ -123,3 +124,44 @@ def test_validation_error_when_isbn_is_invalid():
     }
     r = client.post("/enrichment/enrich", json=payload)
     assert r.status_code == 422
+
+
+def test_enrich_single_sends_audit(monkeypatch):
+    sent = []
+
+    def fake_send(payload):
+        sent.append(payload)
+
+    monkeypatch.setattr(audit_client, "send_audit_event", fake_send)
+
+    payload = {
+        "book_reference": "REF-010",
+        "title": "La sombra del viento",
+        "author": "Carlos Ruiz Zafón",
+    }
+    r = client.post("/enrichment/enrich", json=payload)
+    assert r.status_code == 200
+    assert len(sent) == 1
+    assert sent[0]["module"] == "Enrichment"
+    assert sent[0]["source"] == "mock_google_books"
+    assert sent[0]["computedValue"] == float(r.json()["confidence_score"])
+
+
+def test_enrich_batch_sends_audit(monkeypatch):
+    sent = []
+
+    def fake_send(payload):
+        sent.append(payload)
+
+    monkeypatch.setattr(audit_client, "send_audit_event", fake_send)
+
+    payload = {
+        "items": [
+            {"book_reference": "REF-A", "title": "Don Quijote", "author": "Cervantes"},
+            {"book_reference": "REF-B", "title": "La Odisea", "author": "Homero"},
+        ]
+    }
+    r = client.post("/enrichment/enrich/batch", json=payload)
+    assert r.status_code == 200
+    assert len(sent) == 2
+    assert all(item["module"] == "Enrichment" for item in sent)

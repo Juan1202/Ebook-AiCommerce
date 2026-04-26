@@ -13,6 +13,7 @@ SERVICE_MAP = {
     "enrichment":os.getenv("AI_ENRICHMENT_URL",     "http://ai-enrichment-mock:8006"),
     "quality":   os.getenv("DATA_QUALITY_URL",      "http://data-quality-module:8007"),
     "config":    os.getenv("CONFIG_MODULE_URL",      "http://config-module:8008"),
+    "admin":     os.getenv("AUDIT_SERVICE_URL",      "http://audit-service:8010"),
 }
 
 

@@ -1,9 +1,12 @@
+import logging
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List
 from app.application.enrichment_use_cases import enrich_single, enrich_batch
 from app.domain.enrichment import EnrichmentRequest
+from app.infrastructure.audit_client import send_audit_event
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -81,6 +84,24 @@ class EnrichBatchBody(BaseModel):
     items: List[EnrichRequestBody] = Field(..., min_length=1)
 
 
+def build_audit_payload(result, module="Enrichment"):
+    estado = "ANOMALÍA" if result.confidence_score < 0.75 else "APROBADO"
+    return {
+        "module": module,
+        "decision": f"Enriquecimiento {result.category}",
+        "estado": estado,
+        "anomaly": result.confidence_score < 0.75,
+        "source": result.source_used,
+        "original_value": 0.0,
+        "computed_value": float(result.confidence_score),
+        "rule": "Mock Enrichment",
+        "detail": (
+            f"Enriquecimiento mock realizado para {result.book_reference}. "
+            f"Categoría: {result.category}, puntuación: {result.confidence_score}."
+        ),
+    }
+
+
 @router.post("/enrich")
 def enrich_book(body: EnrichRequestBody):
     req = EnrichmentRequest(
@@ -91,6 +112,11 @@ def enrich_book(body: EnrichRequestBody):
         issn=body.issn,
     )
     result = enrich_single(req)
+    payload = build_audit_payload(result)
+    try:
+        send_audit_event(payload)
+    except Exception as exc:
+        logger.warning("Error enviando auditoría de enriquecimiento: %s", exc)
     return result.__dict__
 
 
@@ -107,6 +133,12 @@ def enrich_books_batch(body: EnrichBatchBody):
         for item in body.items
     ]
     results = enrich_batch(requests)
+    for result in results:
+        payload = build_audit_payload(result)
+        try:
+            send_audit_event(payload)
+        except Exception as exc:
+            logger.warning("Error enviando auditoría de enriquecimiento en lote: %s", exc)
     return [r.__dict__ for r in results]
 
 
