@@ -11,9 +11,9 @@ class Settings(BaseSettings):
     MIN_PRICE_THRESHOLD: float = 5.0
     CONDITION_FACTORS: dict = {
         "NUEVO": 1.0,
-        "BUENO": 0.8,
-        "ACEPTABLE": 0.6,
-        "DETERIORADO": 0.4
+        "BUENO": 0.75,
+        "ACEPTABLE": 0.50,
+        "DETERIORADO": 0.25
     }
 
     class Config:

@@ -26,6 +26,7 @@ class PricingReferenceModel(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     book_id = Column(String(100), index=True, nullable=False)
+    decision_id = Column(Integer, ForeignKey("pricing_decisions.id"), nullable=True, index=True)
     source = Column(String(50), nullable=False)
     price = Column(Float, nullable=False)
     currency = Column(String(3), default="USD", nullable=False)

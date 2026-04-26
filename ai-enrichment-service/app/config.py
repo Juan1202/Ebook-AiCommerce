@@ -5,7 +5,7 @@ load_dotenv()
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://postgres:bookflow123@enrichment-db:5432/enrichment_db"
+    "postgresql://bookflow:bookflow123@enrichment-db:5432/enrichment_db"
 )
 
 CATALOG_SERVICE_URL = os.getenv(

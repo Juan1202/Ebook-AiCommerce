@@ -1,3 +1,5 @@
+import os
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -8,7 +10,8 @@ from app.domain.pricing import BookCondition, PricingDecision
 from app.infrastructure.database import get_db
 
 router = APIRouter()
-pricing_service = PricingService(use_mock=True)  # Use mock for development
+_use_mock = os.getenv("USE_MOCK_EBAY", "false").lower() == "true"
+pricing_service = PricingService(use_mock=_use_mock)
 
 
 class CalculatePriceRequest(BaseModel):
@@ -69,12 +72,12 @@ async def calculate_price(
         raise HTTPException(status_code=500, detail=f"Error calculating price: {str(e)}")
 
 
-@router.get("/{book_id}", response_model=Optional[PricingDecisionResponse])
+@router.get("/{book_id}", response_model=PricingDecisionResponse)
 def get_latest_price(book_id: str, db: Session = Depends(get_db)):
     """Get the latest pricing decision for a book"""
     decision = pricing_service.get_latest_price(db, book_id)
     if not decision:
-        return None
+        raise HTTPException(status_code=404, detail="No pricing decision found for this book")
 
     return PricingDecisionResponse(
         id=decision.id,

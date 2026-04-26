@@ -390,7 +390,7 @@ def enrich_book_logic(payload: dict):
 @app.get("/health")
 def health():
     return {
-        "status": "UP",
+        "status": "ok",
         "service": "ai-enrichment-service"
     }
 
