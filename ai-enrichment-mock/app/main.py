@@ -1,20 +1,7 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from app.routers.enrichment_router import router
+from app.routers.enrichment_router import router as enrichment_router
+from app.routers.adapters_router import router as adapters_router
 
 app = FastAPI(title="AI Enrichment Mock", version="1.0.0")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-app.include_router(router, prefix="/enrichment")
-
-
-@app.get("/health")
-def health():
-    return {"status": "ok", "service": "ai-enrichment-mock"}
+app.include_router(enrichment_router, prefix="/enrichment")
+app.include_router(adapters_router, prefix="/adapters")
