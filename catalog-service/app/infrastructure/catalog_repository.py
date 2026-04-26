@@ -14,11 +14,25 @@ _DEFAULT_CATEGORIES = [
 
 def _book(m: BookModel) -> Book:
     return Book(
-        id=m.id, title=m.title, subtitle=m.subtitle, author=m.author,
-        publisher=m.publisher, publication_year=m.publication_year, volume=m.volume,
-        isbn=m.isbn, issn=m.issn, category_id=m.category_id, description=m.description,
-        cover_url=m.cover_url, price=m.price, enriched_flag=m.enriched_flag, published_flag=m.published_flag,
-        created_at=m.created_at, updated_at=m.updated_at,
+        id=m.id,
+        title=m.title,
+        subtitle=m.subtitle,
+        author=m.author,
+        publisher=m.publisher,
+        publication_year=m.publication_year,
+        volume=m.volume,
+        isbn=m.isbn,
+        issn=m.issn,
+        category_id=m.category_id,
+        description=m.description,
+        cover_url=m.cover_url,
+        price=m.price,
+        condition=m.condition,
+        stock=m.stock,
+        enriched_flag=m.enriched_flag,
+        published_flag=m.published_flag,
+        created_at=m.created_at,
+        updated_at=m.updated_at,
     )
 
 
@@ -75,12 +89,24 @@ def seed_books(db: Session):
 
 def create_book(db: Session, book: Book) -> Book:
     m = BookModel(
-        title=book.title, subtitle=book.subtitle, author=book.author,
-        publisher=book.publisher, publication_year=book.publication_year, volume=book.volume,
-        isbn=book.isbn, issn=book.issn, category_id=book.category_id,
-        description=book.description, cover_url=book.cover_url, price=book.price,
-        enriched_flag=book.enriched_flag, published_flag=book.published_flag,
+        title=book.title,
+        subtitle=book.subtitle,
+        author=book.author,
+        publisher=book.publisher,
+        publication_year=book.publication_year,
+        volume=book.volume,
+        isbn=book.isbn,
+        issn=book.issn,
+        category_id=book.category_id,
+        description=book.description,
+        cover_url=book.cover_url,
+        price=book.price,
+        condition=book.condition,
+        stock=book.stock,
+        enriched_flag=book.enriched_flag,
+        published_flag=book.published_flag,
     )
+
     db.add(m)
     db.commit()
     db.refresh(m)

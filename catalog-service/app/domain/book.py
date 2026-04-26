@@ -25,6 +25,8 @@ class Book:
     description: Optional[str]
     cover_url: Optional[str]
     price: Optional[int]
+    condition: Optional[str]
+    stock: Optional[int]
     enriched_flag: bool
     published_flag: bool
     created_at: Optional[datetime]
@@ -39,5 +41,4 @@ class Book:
         return errors
 
     def can_publish(self) -> bool:
-        return bool(self.title and self.author and
-                    (self.isbn or self.issn or self.publisher))
+        return bool(self.title and self.author and (self.isbn or self.issn or self.publisher))

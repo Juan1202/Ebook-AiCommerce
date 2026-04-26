@@ -7,7 +7,6 @@ const http = axios.create({
   timeout: 15000
 })
 
-// Sin límite práctico para traer todos los libros disponibles desde el backend
 export const PAGE_SIZE = 100000
 
 export async function getBooks(params = {}) {
@@ -21,13 +20,8 @@ export async function getBooks(params = {}) {
 
     const raw = r.data
 
-    if (Array.isArray(raw)) {
-      return { items: raw, total: raw.length }
-    }
-
-    if (raw.items) {
-      return raw
-    }
+    if (Array.isArray(raw)) return { items: raw, total: raw.length }
+    if (raw.items) return raw
 
     return { items: [], total: 0 }
   } catch (error) {
@@ -48,17 +42,12 @@ export async function searchBooks(q, params = {}) {
 
     const raw = r.data
 
-    if (Array.isArray(raw)) {
-      return { items: raw, total: raw.length }
-    }
-
-    if (raw.items) {
-      return raw
-    }
+    if (Array.isArray(raw)) return { items: raw, total: raw.length }
+    if (raw.items) return raw
 
     return { items: [], total: 0 }
   } catch (error) {
-    console.error('Error buscando libros desde BFF:', error)
+    console.error('Error buscando libros:', error)
     return { items: [], total: 0 }
   }
 }
@@ -69,7 +58,7 @@ export async function getBook(id) {
     const data = r.data
     return Array.isArray(data) ? data[0] : data
   } catch (error) {
-    console.error('Error consultando detalle del libro:', error)
+    console.error('Error consultando detalle:', error)
     return null
   }
 }
@@ -84,7 +73,7 @@ export async function getCategories() {
   }
 }
 
-export const getPlaceholderUrl = (title, hexColor = '2F6F52', size = '200x300') => {
+export const getPlaceholderUrl = (title, hexColor = '2F6F52', size = '300x450') => {
   const cleanText = (title || 'Libro')
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-zA-Z0-9\s]/g, '')
