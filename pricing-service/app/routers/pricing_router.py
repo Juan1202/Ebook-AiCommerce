@@ -1,105 +1,129 @@
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from typing import List, Optional
 
-from app.application.use_cases.calculate_price import CalculatePriceUseCase
-from app.domain.entities.pricing import BookCondition
-from app.infrastructure.adapters import ebay_adapter
-from app.infrastructure.database.connection import get_db
-from app.infrastructure.database.repositories.pricing_repository import PricingRepository
+from app.application.pricing_use_cases import PricingService
+from app.domain.pricing import BookCondition, PricingDecision
+from app.infrastructure.database import get_db
 
-router = APIRouter(prefix="/pricing", tags=["pricing"])
+router = APIRouter()
+pricing_service = PricingService(use_mock=True)  # Use mock for development
 
 
-class CalculateRequest(BaseModel):
+class CalculatePriceRequest(BaseModel):
     book_id: str
-    isbn: Optional[str] = None
-    title: Optional[str] = None
-    condition: BookCondition = BookCondition.BUENO
-    publication_year: Optional[int] = None
+    book_title: str
+    condition: BookCondition
+    author: Optional[str] = None
 
 
-@router.post("/calculate")
-async def calculate_price(request: CalculateRequest, db: Session = Depends(get_db)):
-    repo = PricingRepository(db)
-    use_case = CalculatePriceUseCase(repo)
-    result = await use_case.execute(
-        book_id=request.book_id,
-        isbn=request.isbn,
-        title=request.title,
-        condition=request.condition,
-        publication_year=request.publication_year,
-    )
-    return result
+class PricingDecisionResponse(BaseModel):
+    id: int
+    book_id: str
+    condition: str
+    base_price: float
+    condition_factor: float
+    suggested_price: float
+    references_used: int
+    source: str
+    explanation: str
+    created_at: str
 
 
-@router.get("/{book_id}")
+class APIStatusResponse(BaseModel):
+    source: str
+    available: bool
+    last_check: str
+    error_message: Optional[str]
+
+
+@router.post("/calculate", response_model=PricingDecisionResponse)
+async def calculate_price(
+    request: CalculatePriceRequest,
+    db: Session = Depends(get_db)
+):
+    """Calculate suggested price for a book"""
+    try:
+        decision = await pricing_service.calculate_price(
+            db=db,
+            book_id=request.book_id,
+            book_title=request.book_title,
+            condition=request.condition,
+            author=request.author
+        )
+
+        return PricingDecisionResponse(
+            id=decision.id,
+            book_id=decision.book_id,
+            condition=decision.condition.value,
+            base_price=decision.base_price,
+            condition_factor=decision.condition_factor,
+            suggested_price=decision.suggested_price,
+            references_used=decision.references_used,
+            source=decision.source,
+            explanation=decision.explanation,
+            created_at=decision.created_at.isoformat()
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error calculating price: {str(e)}")
+
+
+@router.get("/{book_id}", response_model=Optional[PricingDecisionResponse])
 def get_latest_price(book_id: str, db: Session = Depends(get_db)):
-    repo = PricingRepository(db)
-    decision = repo.get_latest_decision(book_id)
+    """Get the latest pricing decision for a book"""
+    decision = pricing_service.get_latest_price(db, book_id)
     if not decision:
-        raise HTTPException(status_code=404, detail="No pricing decision found for this book")
-    return {
-        "book_id": decision.book_reference,
-        "suggested_price": decision.suggested_price,
-        "currency": decision.currency,
-        "explanation": decision.explanation,
-        "source": decision.source,
-        "condition_factor": decision.condition_factor,
-        "base_price": decision.base_price,
-        "references_found": decision.reference_count,
-        "is_fallback": decision.is_fallback,
-        "calculated_at": decision.created_at.isoformat(),
-    }
+        return None
+
+    return PricingDecisionResponse(
+        id=decision.id,
+        book_id=decision.book_id,
+        condition=decision.condition.value,
+        base_price=decision.base_price,
+        condition_factor=decision.condition_factor,
+        suggested_price=decision.suggested_price,
+        references_used=decision.references_used,
+        source=decision.source,
+        explanation=decision.explanation,
+        created_at=decision.created_at.isoformat()
+    )
 
 
-@router.get("/{book_id}/history")
+@router.get("/history/{book_id}", response_model=List[PricingDecisionResponse])
 def get_price_history(book_id: str, db: Session = Depends(get_db)):
-    repo = PricingRepository(db)
-    history = repo.get_decision_history(book_id)
+    """Get pricing history for a book"""
+    decisions = pricing_service.get_price_history(db, book_id)
+
     return [
-        {
-            "id": d.id,
-            "suggested_price": d.suggested_price,
-            "currency": d.currency,
-            "source": d.source,
-            "condition_factor": d.condition_factor,
-            "is_fallback": d.is_fallback,
-            "calculated_at": d.created_at.isoformat(),
-        }
-        for d in history
+        PricingDecisionResponse(
+            id=d.id,
+            book_id=d.book_id,
+            condition=d.condition.value,
+            base_price=d.base_price,
+            condition_factor=d.condition_factor,
+            suggested_price=d.suggested_price,
+            references_used=d.references_used,
+            source=d.source,
+            explanation=d.explanation,
+            created_at=d.created_at.isoformat()
+        )
+        for d in decisions
     ]
 
 
-@router.get("/{book_id}/explanation")
-def get_price_explanation(book_id: str, db: Session = Depends(get_db)):
-    repo = PricingRepository(db)
-    decision = repo.get_latest_decision(book_id)
-    if not decision:
-        raise HTTPException(status_code=404, detail="No pricing decision found for this book")
-    return {
-        "book_id": decision.book_reference,
-        "explanation": decision.explanation,
-        "base_price": decision.base_price,
-        "condition_factor": decision.condition_factor,
-        "suggested_price": decision.suggested_price,
-        "adjustment_reasons": decision.adjustment_reasons,
-        "source": decision.source,
-        "is_fallback": decision.is_fallback,
-        "references": [
-            {
-                "source": r.source,
-                "price": r.external_price,
-                "currency": r.currency,
-                "observed_at": r.observed_at.isoformat(),
-            }
-            for r in repo.get_references_for_book(book_id)
-        ],
-    }
+@router.get("/explanation/{decision_id}")
+def get_decision_explanation(decision_id: int, db: Session = Depends(get_db)):
+    """Get explanation for a specific pricing decision"""
+    explanation = pricing_service.get_decision_explanation(db, decision_id)
+    if not explanation:
+        raise HTTPException(status_code=404, detail="Decision not found")
+
+    return {"decision_id": decision_id, "explanation": explanation}
 
 
-@router.get("/external-apis/status")
+@router.get("/external-apis/status", response_model=APIStatusResponse)
 def get_external_api_status():
-    return {"apis": [ebay_adapter.get_status()]}
+    """Get status of external APIs"""
+    status = pricing_service.get_external_api_status()
+    return APIStatusResponse(**status)
