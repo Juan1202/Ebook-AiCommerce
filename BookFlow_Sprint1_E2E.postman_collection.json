@@ -1,0 +1,1109 @@
+{
+  "info": {
+    "_postman_id": "48a1e841-8f85-4d97-8335-3219771cc0f8",
+    "name": "BookFlow AI Commerce - FULL SPRINT 1 (9 DEVs)",
+    "description": "Colección completa Sprint 1. Cada carpeta corresponde a un DEV. Las rutas usan el BFF Gateway ({{base_url}} = http://localhost:8009/api). Variable jwt_token se captura automáticamente en Login.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url",        "value": "http://localhost:8009/api", "type": "string" },
+    { "key": "jwt_token",       "value": "",  "type": "string" },
+    { "key": "refresh_token",   "value": "",  "type": "string" },
+    { "key": "current_batch_id","value": "1", "type": "string" },
+    { "key": "current_book_id", "value": "1", "type": "string" }
+  ],
+  "item": [
+
+    {
+      "name": "DEV 01 - Auth / Seguridad",
+      "item": [
+        {
+          "name": "01 Health Check Auth",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Service ok\", () => pm.expect(pm.response.json().status).to.eql('ok'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/auth/health", "host": ["{{base_url}}"], "path": ["auth","health"] }
+          }
+        },
+        {
+          "name": "02 Register Admin User",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 201 o 400 (ya existe)\", () => pm.expect([201,400]).to.include(pm.response.code));",
+            "if (pm.response.code === 201) {",
+            "  pm.test(\"Mensaje registro OK\", () => pm.expect(pm.response.json().message).to.include('registrado'));",
+            "}"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin_pro\",\n  \"email\": \"admin_pro@bookflow.com\",\n  \"password\": \"admin_secret_123\",\n  \"role\": \"admin\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/auth/register", "host": ["{{base_url}}"], "path": ["auth","register"] }
+          }
+        },
+        {
+          "name": "03 Login (captura token)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "var j = pm.response.json();",
+            "pm.test(\"access_token existe\", () => pm.expect(j.access_token).to.be.a('string'));",
+            "pm.test(\"refresh_token existe\", () => pm.expect(j.refresh_token).to.be.a('string'));",
+            "pm.test(\"role es admin\", () => pm.expect(j.role).to.eql('admin'));",
+            "pm.collectionVariables.set('jwt_token', j.access_token);",
+            "pm.collectionVariables.set('refresh_token', j.refresh_token);"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "username", "value": "admin_pro", "type": "text" },
+                { "key": "password", "value": "admin_secret_123", "type": "text" }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth","login"] }
+          }
+        },
+        {
+          "name": "04 Verify Token",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "var j = pm.response.json();",
+            "pm.test(\"username correcto\", () => pm.expect(j.username).to.eql('admin_pro'));",
+            "pm.test(\"role correcto\", () => pm.expect(j.role).to.eql('admin'));"
+          ]}}],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{jwt_token}}", "type": "string" }] },
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/auth/verify", "host": ["{{base_url}}"], "path": ["auth","verify"] }
+          }
+        },
+        {
+          "name": "05 Refresh Token",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "var j = pm.response.json();",
+            "pm.test(\"Nuevo access_token generado\", () => pm.expect(j.access_token).to.be.a('string'));",
+            "pm.collectionVariables.set('jwt_token', j.access_token);"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/auth/refresh", "host": ["{{base_url}}"], "path": ["auth","refresh"] }
+          }
+        },
+        {
+          "name": "06 Mock Token (solo desarrollo)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Token de prueba existe\", () => pm.expect(pm.response.json().access_token).to.be.a('string'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/auth/mock-token", "host": ["{{base_url}}"], "path": ["auth","mock-token"] }
+          }
+        },
+        {
+          "name": "07 Logout",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Sesión cerrada\", () => pm.expect(pm.response.json().message).to.include('cerrada'));"
+          ]}}],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{jwt_token}}", "type": "string" }] },
+            "method": "POST",
+            "url": { "raw": "{{base_url}}/auth/logout", "host": ["{{base_url}}"], "path": ["auth","logout"] }
+          }
+        },
+        {
+          "name": "08 Rechazar Token Inválido",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 401 con token inválido\", () => pm.response.to.have.status(401));"
+          ]}}],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "token_invalido_xyz", "type": "string" }] },
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/auth/verify", "host": ["{{base_url}}"], "path": ["auth","verify"] }
+          }
+        },
+        {
+          "name": "09 Rechazar Credenciales Incorrectas",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 401 con contraseña incorrecta\", () => pm.response.to.have.status(401));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "username", "value": "admin_pro", "type": "text" },
+                { "key": "password", "value": "password_incorrecta", "type": "text" }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth","login"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "DEV 02 - Inventory Service",
+      "item": [
+        {
+          "name": "01 Health Check Inventory",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Service ok\", () => pm.expect(pm.response.json().status).to.eql('ok'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/inventory/inventory/health", "host": ["{{base_url}}"], "path": ["inventory","inventory","health"] }
+          }
+        },
+        {
+          "name": "02 Carga Masiva CSV (Éxito)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 201 - Lote creado\", () => pm.response.to.have.status(201));",
+            "var j = pm.response.json();",
+            "pm.test(\"Lote tiene ID\", () => pm.expect(j.id).to.be.a('number'));",
+            "pm.test(\"Status completed o processing\", () => pm.expect(['completed','processing']).to.include(j.status));",
+            "pm.collectionVariables.set('current_batch_id', j.id);"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [{ "key": "file", "type": "file", "src": [], "description": "Adjuntar sample_inventory.csv" }]
+            },
+            "url": { "raw": "{{base_url}}/inventory/batches/upload", "host": ["{{base_url}}"], "path": ["inventory","batches","upload"] }
+          }
+        },
+        {
+          "name": "03 Rechazar Formato Inválido (.txt)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 400 para formato no permitido\", () => pm.response.to.have.status(400));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [{ "key": "file", "value": "archivo.txt", "type": "text", "description": "Simula extensión no permitida" }]
+            },
+            "url": { "raw": "{{base_url}}/inventory/batches/upload", "host": ["{{base_url}}"], "path": ["inventory","batches","upload"] }
+          }
+        },
+        {
+          "name": "04 Listar Historial de Lotes",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Respuesta es array\", () => pm.expect(pm.response.json()).to.be.an('array'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/inventory/batches/", "host": ["{{base_url}}"], "path": ["inventory","batches",""] }
+          }
+        },
+        {
+          "name": "05 Detalle de Lote por ID",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "var j = pm.response.json();",
+            "pm.test(\"Tiene processed_rows\", () => pm.expect(j.processed_rows).to.be.a('number'));",
+            "pm.test(\"Tiene valid_rows\", () => pm.expect(j.valid_rows).to.be.a('number'));",
+            "pm.test(\"Tiene invalid_rows\", () => pm.expect(j.invalid_rows).to.be.a('number'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/inventory/batches/{{current_batch_id}}", "host": ["{{base_url}}"], "path": ["inventory","batches","{{current_batch_id}}"] }
+          }
+        },
+        {
+          "name": "06 Errores del Lote",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Respuesta es array\", () => pm.expect(pm.response.json()).to.be.an('array'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/inventory/batches/{{current_batch_id}}/errors", "host": ["{{base_url}}"], "path": ["inventory","batches","{{current_batch_id}}","errors"] }
+          }
+        },
+        {
+          "name": "07 Items del Lote",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Respuesta es array\", () => pm.expect(pm.response.json()).to.be.an('array'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/inventory/batches/{{current_batch_id}}/items", "host": ["{{base_url}}"], "path": ["inventory","batches","{{current_batch_id}}","items"] }
+          }
+        },
+        {
+          "name": "08 Listar Items de Inventario",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Respuesta es array\", () => pm.expect(pm.response.json()).to.be.an('array'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/inventory/inventory/?skip=0&limit=50", "host": ["{{base_url}}"], "path": ["inventory","inventory",""], "query": [{"key":"skip","value":"0"},{"key":"limit","value":"50"}] }
+          }
+        },
+        {
+          "name": "09 Disponibilidad por Referencia",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "var j = pm.response.json();",
+            "pm.test(\"Tiene quantity_available\", () => pm.expect(j.quantity_available).to.be.a('number'));",
+            "pm.test(\"Tiene is_available\", () => pm.expect(j.is_available).to.be.a('boolean'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/inventory/inventory/availability/REF-001", "host": ["{{base_url}}"], "path": ["inventory","inventory","availability","REF-001"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "DEV 03 - Catalog Service (CRUD)",
+      "item": [
+        {
+          "name": "01 Health Check Catalog",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Service ok\", () => pm.expect(pm.response.json().status).to.eql('ok'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/catalog/health", "host": ["{{base_url}}"], "path": ["catalog","health"] }
+          }
+        },
+        {
+          "name": "02 Crear Libro",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+            "var j = pm.response.json();",
+            "pm.test(\"Libro tiene ID\", () => pm.expect(j.id).to.be.a('number'));",
+            "pm.test(\"Título correcto\", () => pm.expect(j.title).to.eql('Rayuela'));",
+            "pm.collectionVariables.set('current_book_id', j.id);"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Rayuela\",\n  \"author\": \"Julio Cortázar\",\n  \"publisher\": \"Sudamericana\",\n  \"isbn\": \"9788437604572\",\n  \"category_id\": 1,\n  \"description\": \"Novela experimental argentina.\",\n  \"published_flag\": false\n}"
+            },
+            "url": { "raw": "{{base_url}}/catalog/books/", "host": ["{{base_url}}"], "path": ["catalog","books",""] }
+          }
+        },
+        {
+          "name": "03 Listar Todos los Libros",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Respuesta es array\", () => pm.expect(pm.response.json()).to.be.an('array'));",
+            "pm.test(\"Hay al menos 1 libro\", () => pm.expect(pm.response.json().length).to.be.above(0));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/catalog/books/?skip=0&limit=20", "host": ["{{base_url}}"], "path": ["catalog","books",""], "query": [{"key":"skip","value":"0"},{"key":"limit","value":"20"}] }
+          }
+        },
+        {
+          "name": "04 Obtener Libro por ID",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"ID correcto\", () => pm.expect(pm.response.json().id).to.eql(parseInt(pm.collectionVariables.get('current_book_id'))));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/catalog/books/{{current_book_id}}", "host": ["{{base_url}}"], "path": ["catalog","books","{{current_book_id}}"] }
+          }
+        },
+        {
+          "name": "05 Actualizar Libro",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Descripción actualizada\", () => pm.expect(pm.response.json().description).to.include('actualizada'));"
+          ]}}],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Descripción actualizada por DEV 03.\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/catalog/books/{{current_book_id}}", "host": ["{{base_url}}"], "path": ["catalog","books","{{current_book_id}}"] }
+          }
+        },
+        {
+          "name": "06 Publicar Libro",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"published_flag = true\", () => pm.expect(pm.response.json().published_flag).to.be.true);"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{base_url}}/catalog/books/{{current_book_id}}/publish", "host": ["{{base_url}}"], "path": ["catalog","books","{{current_book_id}}","publish"] }
+          }
+        },
+        {
+          "name": "07 Rechazar Libro Sin Título",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 422 por validación fallida\", () => pm.response.to.have.status(422));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"\",\n  \"author\": \"Autor Test\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/catalog/books/", "host": ["{{base_url}}"], "path": ["catalog","books",""] }
+          }
+        },
+        {
+          "name": "08 Libro No Encontrado (404)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 404\", () => pm.response.to.have.status(404));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/catalog/books/99999", "host": ["{{base_url}}"], "path": ["catalog","books","99999"] }
+          }
+        },
+        {
+          "name": "09 Eliminar Libro",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 204 - eliminado\", () => pm.response.to.have.status(204));"
+          ]}}],
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{base_url}}/catalog/books/{{current_book_id}}", "host": ["{{base_url}}"], "path": ["catalog","books","{{current_book_id}}"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "DEV 04 - Categorías (Catalog)",
+      "item": [
+        {
+          "name": "01 Listar Categorías",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Respuesta es array\", () => pm.expect(pm.response.json()).to.be.an('array'));",
+            "pm.test(\"Hay categorías\", () => pm.expect(pm.response.json().length).to.be.above(0));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/catalog/categories/", "host": ["{{base_url}}"], "path": ["catalog","categories",""] }
+          }
+        },
+        {
+          "name": "02 Crear Categoría",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+            "var j = pm.response.json();",
+            "pm.test(\"Categoría tiene ID\", () => pm.expect(j.id).to.be.a('number'));",
+            "pm.test(\"Nombre correcto\", () => pm.expect(j.name).to.eql('Terror'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Terror\",\n  \"description\": \"Libros de terror y suspenso\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/catalog/categories/", "host": ["{{base_url}}"], "path": ["catalog","categories",""] }
+          }
+        },
+        {
+          "name": "03 Seed Categorías por Defecto",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "var cats = pm.response.json();",
+            "pm.test(\"Ficción existe\", () => pm.expect(cats.some(c => c.name === 'Ficción')).to.be.true);",
+            "pm.test(\"Historia existe\", () => pm.expect(cats.some(c => c.name === 'Historia')).to.be.true);"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/catalog/categories/", "host": ["{{base_url}}"], "path": ["catalog","categories",""] }
+          }
+        },
+        {
+          "name": "04 Libros Filtrados por published_only",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "var books = pm.response.json();",
+            "pm.test(\"Todos publicados\", () => books.forEach(b => pm.expect(b.published_flag).to.be.true));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/catalog/books/?published_only=true", "host": ["{{base_url}}"], "path": ["catalog","books",""], "query": [{"key":"published_only","value":"true"}] }
+          }
+        },
+        {
+          "name": "05 Paginación Libros (skip/limit)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Máximo 5 resultados\", () => pm.expect(pm.response.json().length).to.be.at.most(5));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/catalog/books/?skip=0&limit=5", "host": ["{{base_url}}"], "path": ["catalog","books",""], "query": [{"key":"skip","value":"0"},{"key":"limit","value":"5"}] }
+          }
+        },
+        {
+          "name": "06 Paginación Página 2",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/catalog/books/?skip=5&limit=5", "host": ["{{base_url}}"], "path": ["catalog","books",""], "query": [{"key":"skip","value":"5"},{"key":"limit","value":"5"}] }
+          }
+        },
+        {
+          "name": "07 Crear Libro en Categoría",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+            "pm.test(\"category_id asignado\", () => pm.expect(pm.response.json().category_id).to.be.a('number'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"El nombre del viento\",\n  \"author\": \"Patrick Rothfuss\",\n  \"isbn\": \"9788401352836\",\n  \"category_id\": 1\n}"
+            },
+            "url": { "raw": "{{base_url}}/catalog/books/", "host": ["{{base_url}}"], "path": ["catalog","books",""] }
+          }
+        },
+        {
+          "name": "08 Rechazar Categoría Sin Nombre",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 422\", () => pm.response.to.have.status(422));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"\"\n}" },
+            "url": { "raw": "{{base_url}}/catalog/categories/", "host": ["{{base_url}}"], "path": ["catalog","categories",""] }
+          }
+        },
+        {
+          "name": "09 Listar Categorías Confirma Seed Completo",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Al menos 8 categorías\", () => pm.expect(pm.response.json().length).to.be.at.least(8));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/catalog/categories/", "host": ["{{base_url}}"], "path": ["catalog","categories",""] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "DEV 05 - Búsqueda y Filtros (Catalog)",
+      "item": [
+        {
+          "name": "01 Búsqueda por Título",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Respuesta es array\", () => pm.expect(pm.response.json()).to.be.an('array'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/catalog/books/search?q=Cien", "host": ["{{base_url}}"], "path": ["catalog","books","search"], "query": [{"key":"q","value":"Cien"}] }
+          }
+        },
+        {
+          "name": "02 Búsqueda por Autor",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "var books = pm.response.json();",
+            "pm.test(\"Resultados contienen García\", () => pm.expect(books.some(b => b.author.includes('García'))).to.be.true);"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/catalog/books/search?q=García Márquez", "host": ["{{base_url}}"], "path": ["catalog","books","search"], "query": [{"key":"q","value":"García Márquez"}] }
+          }
+        },
+        {
+          "name": "03 Búsqueda por ISBN",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Respuesta es array\", () => pm.expect(pm.response.json()).to.be.an('array'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/catalog/books/search?q=978-0-06-088328-7", "host": ["{{base_url}}"], "path": ["catalog","books","search"], "query": [{"key":"q","value":"978-0-06-088328-7"}] }
+          }
+        },
+        {
+          "name": "04 Búsqueda Sin Resultados",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Array vacío\", () => pm.expect(pm.response.json().length).to.eql(0));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/catalog/books/search?q=xxxxxxxxxnoexiste", "host": ["{{base_url}}"], "path": ["catalog","books","search"], "query": [{"key":"q","value":"xxxxxxxxxnoexiste"}] }
+          }
+        },
+        {
+          "name": "05 Búsqueda Query Muy Corta (error validación)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 422 por query menor a 2 chars\", () => pm.response.to.have.status(422));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/catalog/books/search?q=a", "host": ["{{base_url}}"], "path": ["catalog","books","search"], "query": [{"key":"q","value":"a"}] }
+          }
+        },
+        {
+          "name": "06 Búsqueda con Paginación",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Máximo 3 resultados\", () => pm.expect(pm.response.json().length).to.be.at.most(3));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/catalog/books/search?q=el&limit=3", "host": ["{{base_url}}"], "path": ["catalog","books","search"], "query": [{"key":"q","value":"el"},{"key":"limit","value":"3"}] }
+          }
+        },
+        {
+          "name": "07 Listar Solo Publicados",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "var books = pm.response.json();",
+            "pm.test(\"Todos publicados\", () => books.forEach(b => pm.expect(b.published_flag).to.be.true));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/catalog/books/?published_only=true&limit=100", "host": ["{{base_url}}"], "path": ["catalog","books",""], "query": [{"key":"published_only","value":"true"},{"key":"limit","value":"100"}] }
+          }
+        },
+        {
+          "name": "08 Buscar Término Parcial",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Al menos 1 resultado\", () => pm.expect(pm.response.json().length).to.be.above(0));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/catalog/books/search?q=1984", "host": ["{{base_url}}"], "path": ["catalog","books","search"], "query": [{"key":"q","value":"1984"}] }
+          }
+        },
+        {
+          "name": "09 Tiempo de Respuesta Búsqueda",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Responde en menos de 1000ms\", () => pm.expect(pm.response.responseTime).to.be.below(1000));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/catalog/books/search?q=Orwell", "host": ["{{base_url}}"], "path": ["catalog","books","search"], "query": [{"key":"q","value":"Orwell"}] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "DEV 06 - AI Enrichment Mock",
+      "item": [
+        {
+          "name": "01 Health Check Enrichment",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Service ok\", () => pm.expect(pm.response.json().status).to.eql('ok'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/enrichment/enrichment/health", "host": ["{{base_url}}"], "path": ["enrichment","enrichment","health"] }
+          }
+        },
+        {
+          "name": "02 Enriquecer Libro (Éxito)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "var j = pm.response.json();",
+            "pm.test(\"Tiene description\", () => pm.expect(j.description).to.be.a('string').and.have.length.above(0));",
+            "pm.test(\"Tiene cover_url\", () => pm.expect(j.cover_url).to.be.a('string'));",
+            "pm.test(\"enriched_flag = true\", () => pm.expect(j.enriched_flag).to.be.true);"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"book_reference\": \"REF-001\",\n  \"title\": \"Rayuela\",\n  \"author\": \"Julio Cortázar\",\n  \"isbn\": \"9788437604572\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/enrichment/enrichment/enrich", "host": ["{{base_url}}"], "path": ["enrichment","enrichment","enrich"] }
+          }
+        },
+        {
+          "name": "03 Rechazar Ficha Incompleta (campos vacíos)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 422\", () => pm.response.to.have.status(422));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"book_reference\": \"\",\n  \"title\": \"\",\n  \"author\": \"\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/enrichment/enrichment/enrich", "host": ["{{base_url}}"], "path": ["enrichment","enrichment","enrich"] }
+          }
+        },
+        {
+          "name": "04 Rechazar ISBN Inválido",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 422 por ISBN inválido\", () => pm.response.to.have.status(422));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"book_reference\": \"REF-002\",\n  \"title\": \"Test Book\",\n  \"author\": \"Autor Test\",\n  \"isbn\": \"12345\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/enrichment/enrichment/enrich", "host": ["{{base_url}}"], "path": ["enrichment","enrichment","enrich"] }
+          }
+        },
+        {
+          "name": "05 Enriquecimiento Batch",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Respuesta es array con 2 elementos\", () => pm.expect(pm.response.json().length).to.eql(2));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\"book_reference\": \"REF-001\", \"title\": \"Rayuela\", \"author\": \"Julio Cortázar\"},\n    {\"book_reference\": \"REF-002\", \"title\": \"Ficciones\", \"author\": \"Borges\"}\n  ]\n}"
+            },
+            "url": { "raw": "{{base_url}}/enrichment/enrichment/enrich/batch", "host": ["{{base_url}}"], "path": ["enrichment","enrichment","enrich","batch"] }
+          }
+        },
+        {
+          "name": "06 Enriquecer con ISSN",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Tiene enriched_flag\", () => pm.expect(pm.response.json().enriched_flag).to.be.true);"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"book_reference\": \"REF-003\",\n  \"title\": \"Revista Ciencia\",\n  \"author\": \"Varios Autores\",\n  \"issn\": \"12345678\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/enrichment/enrichment/enrich", "host": ["{{base_url}}"], "path": ["enrichment","enrichment","enrich"] }
+          }
+        },
+        {
+          "name": "07 Rechazar Batch Vacío",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 422\", () => pm.response.to.have.status(422));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"items\": []\n}" },
+            "url": { "raw": "{{base_url}}/enrichment/enrichment/enrich/batch", "host": ["{{base_url}}"], "path": ["enrichment","enrichment","enrich","batch"] }
+          }
+        },
+        {
+          "name": "08 Tiempo de Respuesta Enriquecimiento",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Responde en menos de 500ms\", () => pm.expect(pm.response.responseTime).to.be.below(500));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"book_reference\": \"REF-PERF\",\n  \"title\": \"Performance Test\",\n  \"author\": \"Tester\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/enrichment/enrichment/enrich", "host": ["{{base_url}}"], "path": ["enrichment","enrichment","enrich"] }
+          }
+        },
+        {
+          "name": "09 Enriquecimiento Sin ISBN ni ISSN",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200 (ISBN/ISSN opcionales)\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Igual retorna enriched_flag\", () => pm.expect(pm.response.json().enriched_flag).to.exist);"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"book_reference\": \"REF-004\",\n  \"title\": \"Libro Sin Identificador\",\n  \"author\": \"Autor Anónimo\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/enrichment/enrichment/enrich", "host": ["{{base_url}}"], "path": ["enrichment","enrichment","enrich"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "DEV 07 - Data Quality Module",
+      "item": [
+        {
+          "name": "01 Health Check Quality",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Service ok\", () => pm.expect(pm.response.json().status).to.eql('ok'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/quality/quality/health", "host": ["{{base_url}}"], "path": ["quality","quality","health"] }
+          }
+        },
+        {
+          "name": "02 Resumen General de Calidad",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "var j = pm.response.json();",
+            "pm.test(\"Tiene total_batches\", () => pm.expect(j.total_batches).to.be.a('number'));",
+            "pm.test(\"Tiene overall_error_rate\", () => pm.expect(j.overall_error_rate).to.be.a('number'));",
+            "pm.test(\"Tiene lista de batches\", () => pm.expect(j.batches).to.be.an('array'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/quality/quality/summary", "host": ["{{base_url}}"], "path": ["quality","quality","summary"] }
+          }
+        },
+        {
+          "name": "03 Listar Batches con Calidad",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Respuesta es array\", () => pm.expect(pm.response.json()).to.be.an('array'));",
+            "var batches = pm.response.json();",
+            "if (batches.length > 0) {",
+            "  pm.test(\"Batch tiene error_rate\", () => pm.expect(batches[0].error_rate).to.be.a('number'));",
+            "}"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/quality/quality/batches", "host": ["{{base_url}}"], "path": ["quality","quality","batches"] }
+          }
+        },
+        {
+          "name": "04 Reporte Detallado Batch 1",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200 o 404\", () => pm.expect([200,404]).to.include(pm.response.code));",
+            "if (pm.response.code === 200) {",
+            "  var j = pm.response.json();",
+            "  pm.test(\"Tiene batch_id\", () => pm.expect(j.batch_id).to.be.a('number'));",
+            "  pm.test(\"Tiene errors array\", () => pm.expect(j.errors).to.be.an('array'));",
+            "  pm.test(\"Tiene error_rate\", () => pm.expect(j.error_rate).to.be.a('number'));",
+            "}"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/quality/quality/batches/1/report", "host": ["{{base_url}}"], "path": ["quality","quality","batches","1","report"] }
+          }
+        },
+        {
+          "name": "05 Reporte Batch con Errores (Mock batch 3)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200 o 404\", () => pm.expect([200,404]).to.include(pm.response.code));",
+            "if (pm.response.code === 200) {",
+            "  var j = pm.response.json();",
+            "  pm.test(\"Tiene errores identificados\", () => pm.expect(j.errors.length).to.be.above(0));",
+            "  pm.test(\"Error tiene row_number\", () => pm.expect(j.errors[0].row_number).to.be.a('number'));",
+            "  pm.test(\"Error tiene message\", () => pm.expect(j.errors[0].message).to.be.a('string'));",
+            "}"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/quality/quality/batches/3/report", "host": ["{{base_url}}"], "path": ["quality","quality","batches","3","report"] }
+          }
+        },
+        {
+          "name": "06 Reporte Batch Inexistente (404)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 404\", () => pm.response.to.have.status(404));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/quality/quality/batches/99999/report", "host": ["{{base_url}}"], "path": ["quality","quality","batches","99999","report"] }
+          }
+        },
+        {
+          "name": "07 Error Rate Calculado Correctamente",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "var j = pm.response.json();",
+            "pm.test(\"overall_error_rate entre 0 y 1\", () => { pm.expect(j.overall_error_rate).to.be.at.least(0); pm.expect(j.overall_error_rate).to.be.at.most(1); });"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/quality/quality/summary", "host": ["{{base_url}}"], "path": ["quality","quality","summary"] }
+          }
+        },
+        {
+          "name": "08 Errores de Lote desde Inventory",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Respuesta es array\", () => pm.expect(pm.response.json()).to.be.an('array'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/inventory/batches/{{current_batch_id}}/errors", "host": ["{{base_url}}"], "path": ["inventory","batches","{{current_batch_id}}","errors"] }
+          }
+        },
+        {
+          "name": "09 Conteo de Batches Completados vs Fallidos",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "var j = pm.response.json();",
+            "pm.test(\"completed + failed <= total\", () => pm.expect(j.completed_batches + j.failed_batches).to.be.at.most(j.total_batches));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/quality/quality/summary", "host": ["{{base_url}}"], "path": ["quality","quality","summary"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "DEV 08 - Config Module",
+      "item": [
+        {
+          "name": "01 Listar Todos los Parámetros",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "var j = pm.response.json();",
+            "pm.test(\"porcentaje_comision existe\", () => pm.expect(j.porcentaje_comision).to.exist);",
+            "pm.test(\"limite_stock_minimo existe\", () => pm.expect(j.limite_stock_minimo).to.exist);"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/config/config/", "host": ["{{base_url}}"], "path": ["config","config",""] }
+          }
+        },
+        {
+          "name": "02 Obtener Parámetro Individual",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "var j = pm.response.json();",
+            "pm.test(\"Tiene key\", () => pm.expect(j.key).to.eql('porcentaje_comision'));",
+            "pm.test(\"Tiene value numérico\", () => pm.expect(j.value).to.be.a('number'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/config/config/porcentaje_comision", "host": ["{{base_url}}"], "path": ["config","config","porcentaje_comision"] }
+          }
+        },
+        {
+          "name": "03 Actualizar porcentaje_comision",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Valor actualizado a 0.10\", () => pm.expect(pm.response.json().value).to.eql(0.1));"
+          ]}}],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"value\": 0.10\n}" },
+            "url": { "raw": "{{base_url}}/config/config/porcentaje_comision", "host": ["{{base_url}}"], "path": ["config","config","porcentaje_comision"] }
+          }
+        },
+        {
+          "name": "04 Actualizar porcentaje_descuento_base",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Valor actualizado a 0.05\", () => pm.expect(pm.response.json().value).to.eql(0.05));"
+          ]}}],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"value\": 0.05\n}" },
+            "url": { "raw": "{{base_url}}/config/config/porcentaje_descuento_base", "host": ["{{base_url}}"], "path": ["config","config","porcentaje_descuento_base"] }
+          }
+        },
+        {
+          "name": "05 Actualizar limite_stock_minimo",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Valor actualizado a 5\", () => pm.expect(pm.response.json().value).to.eql(5));"
+          ]}}],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"value\": 5\n}" },
+            "url": { "raw": "{{base_url}}/config/config/limite_stock_minimo", "host": ["{{base_url}}"], "path": ["config","config","limite_stock_minimo"] }
+          }
+        },
+        {
+          "name": "06 Rechazar Valor Fuera de Rango (comision > 1)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 400 por valor inválido\", () => pm.response.to.have.status(400));"
+          ]}}],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"value\": 1.5\n}" },
+            "url": { "raw": "{{base_url}}/config/config/porcentaje_comision", "host": ["{{base_url}}"], "path": ["config","config","porcentaje_comision"] }
+          }
+        },
+        {
+          "name": "07 Rechazar Parámetro Inexistente",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 404\", () => pm.response.to.have.status(404));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/config/config/parametro_no_existe", "host": ["{{base_url}}"], "path": ["config","config","parametro_no_existe"] }
+          }
+        },
+        {
+          "name": "08 Rechazar Stock Mínimo Negativo",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 400 por valor negativo\", () => pm.response.to.have.status(400));"
+          ]}}],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"value\": -1\n}" },
+            "url": { "raw": "{{base_url}}/config/config/limite_stock_minimo", "host": ["{{base_url}}"], "path": ["config","config","limite_stock_minimo"] }
+          }
+        },
+        {
+          "name": "09 Actualizar error_rate_threshold",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Valor actualizado\", () => pm.expect(pm.response.json().value).to.eql(0.2));"
+          ]}}],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"value\": 0.20\n}" },
+            "url": { "raw": "{{base_url}}/config/config/error_rate_threshold", "host": ["{{base_url}}"], "path": ["config","config","error_rate_threshold"] }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "DEV 09 - BFF Gateway / Observabilidad",
+      "item": [
+        {
+          "name": "01 BFF Health Check",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Service ok\", () => pm.expect(pm.response.json().status).to.eql('ok'));",
+            "pm.test(\"Responde en menos de 300ms\", () => pm.expect(pm.response.responseTime).to.be.below(300));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "http://localhost:8009/health", "protocol": "http", "host": ["localhost"], "port": "8009", "path": ["health"] }
+          }
+        },
+        {
+          "name": "02 Proxy Auth Service",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"BFF enruta a auth (200)\", () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/auth/health", "host": ["{{base_url}}"], "path": ["auth","health"] }
+          }
+        },
+        {
+          "name": "03 Proxy Inventory Service",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"BFF enruta a inventory (200)\", () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/inventory/inventory/health", "host": ["{{base_url}}"], "path": ["inventory","inventory","health"] }
+          }
+        },
+        {
+          "name": "04 Proxy Catalog Service",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"BFF enruta a catalog (200)\", () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/catalog/health", "host": ["{{base_url}}"], "path": ["catalog","health"] }
+          }
+        },
+        {
+          "name": "05 Proxy Enrichment Service",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"BFF enruta a enrichment (200)\", () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/enrichment/enrichment/health", "host": ["{{base_url}}"], "path": ["enrichment","enrichment","health"] }
+          }
+        },
+        {
+          "name": "06 Proxy Quality Module",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"BFF enruta a quality (200)\", () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/quality/quality/health", "host": ["{{base_url}}"], "path": ["quality","quality","health"] }
+          }
+        },
+        {
+          "name": "07 Proxy Config Module",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"BFF enruta a config (200)\", () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/config/config/", "host": ["{{base_url}}"], "path": ["config","config",""] }
+          }
+        },
+        {
+          "name": "08 Servicio No Registrado (404)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"404 para servicio desconocido\", () => pm.response.to.have.status(404));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/servicio-inexistente/test", "host": ["{{base_url}}"], "path": ["servicio-inexistente","test"] }
+          }
+        },
+        {
+          "name": "09 Tiempo de Respuesta BFF a Catalog",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+            "pm.test(\"Latencia BFF + Catalog < 1000ms\", () => pm.expect(pm.response.responseTime).to.be.below(1000));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/catalog/books/?limit=10", "host": ["{{base_url}}"], "path": ["catalog","books",""], "query": [{"key":"limit","value":"10"}] }
+          }
+        }
+      ]
+    }
+
+  ]
+}

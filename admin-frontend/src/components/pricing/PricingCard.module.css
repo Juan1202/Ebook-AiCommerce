@@ -1,0 +1,99 @@
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 18px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Texto */
+.title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.price {
+  font-size: 24px;
+  font-weight: 700;
+  margin-top: 8px;
+}
+
+/* Badge */
+.badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 999px;
+}
+
+.verified {
+  background: #ecfdf5;
+  color: #16a34a;
+}
+
+.estimated {
+  background: #fffbeb;
+  color: #f59e0b;
+}
+
+/* Botones */
+.buttons {
+  margin-top: 14px;
+  display: flex;
+  gap: 10px;
+}
+
+.buttonPrimary {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.buttonPrimary:hover {
+  background: var(--primary-hover);
+}
+
+.buttonSecondary {
+  background: white;
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.buttonSecondary:hover {
+  background: #f9fafb;
+}
+
+/* Detalle */
+.detail {
+  margin-top: 15px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.textMuted {
+  color: var(--text);
+  font-size: 13px;
+}
+
+/* Lista */
+.list {
+  margin-top: 8px;
+  padding-left: 16px;
+}
