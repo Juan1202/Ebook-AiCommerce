@@ -1,66 +1,121 @@
-export const getCart = () => {
-  return JSON.parse(localStorage.getItem('cart')) || []
+const CART_KEY = 'bookflow_cart'
+
+export function getCart() {
+  const raw = localStorage.getItem(CART_KEY)
+  return raw ? JSON.parse(raw) : []
 }
 
-export const saveCart = (cart) => {
-  localStorage.setItem('cart', JSON.stringify(cart))
+export function saveCart(cart) {
+  localStorage.setItem(CART_KEY, JSON.stringify(cart))
+  window.dispatchEvent(new Event('cart-updated'))
 }
 
-export const addToCart = (book) => {
+export function getStock(book) {
+  if (book.stock === undefined || book.stock === null) return null
+  return Number(book.stock)
+}
+
+export function addToCart(book) {
+  const stock = getStock(book)
+
+  if (stock !== null && stock <= 0) {
+    alert('Este libro está agotado.')
+    return getCart()
+  }
+
   const cart = getCart()
-
-  const existing = cart.find(item => item.id === book.id)
+  const existing = cart.find(item => Number(item.id) === Number(book.id))
 
   if (existing) {
+    if (stock !== null && existing.quantity >= stock) {
+      alert(`No puedes agregar más unidades. Stock disponible: ${stock}`)
+      return cart
+    }
+
     existing.quantity += 1
   } else {
-    cart.push({ ...book, quantity: 1 })
+    cart.push({
+      id: book.id,
+      title: book.title,
+      author: book.author,
+      price: book.price || book.suggested_price || null,
+      cover_url: book.cover_url,
+      stock: stock,
+      quantity: 1
+    })
   }
 
   saveCart(cart)
-  window.dispatchEvent(new Event('cartUpdated'))
+  alert('Libro agregado al carrito')
+  return cart
 }
 
-export const removeFromCart = (id) => {
-  const cart = getCart().filter(item => item.id !== id)
+export function removeFromCart(id) {
+  const cart = getCart().filter(item => Number(item.id) !== Number(id))
   saveCart(cart)
-  window.dispatchEvent(new Event('cartUpdated'))
+  return cart
 }
 
-export const getCartCount = () => {
-  return getCart().reduce((acc, item) => acc + item.quantity, 0)
+export function increaseQuantity(id) {
+  const cart = getCart().map(item => {
+    if (Number(item.id) === Number(id)) {
+      if (item.stock !== null && item.stock !== undefined && item.quantity >= item.stock) {
+        alert(`No puedes agregar más unidades. Stock disponible: ${item.stock}`)
+        return item
+      }
+
+      return { ...item, quantity: item.quantity + 1 }
+    }
+
+    return item
+  })
+
+  saveCart(cart)
+  return cart
 }
 
-export const getCartTotal = () => {
-  return getCart().reduce((acc, item) => {
-    return acc + (item.price || 0) * item.quantity
+export function decreaseQuantity(id) {
+  const cart = getCart()
+    .map(item => {
+      if (Number(item.id) === Number(id)) {
+        return { ...item, quantity: item.quantity - 1 }
+      }
+
+      return item
+    })
+    .filter(item => item.quantity > 0)
+
+  saveCart(cart)
+  return cart
+}
+
+export function getCartCount() {
+  return getCart().reduce((total, item) => total + Number(item.quantity || 0), 0)
+}
+
+export function getCartTotal() {
+  return getCart().reduce((total, item) => {
+    const price = Number(item.price || 0)
+    const quantity = Number(item.quantity || 0)
+    return total + price * quantity
   }, 0)
 }
 
-// ➕ Aumentar cantidad
-export const increaseQuantity = (id) => {
-  const cart = getCart()
-  const item = cart.find(i => i.id === id)
-
-  if (item) item.quantity += 1
-
-  saveCart(cart)
-  window.dispatchEvent(new Event('cartUpdated'))
+export function clearCart() {
+  localStorage.removeItem(CART_KEY)
+  window.dispatchEvent(new Event('cart-updated'))
+  return []
 }
 
-// ➖ Disminuir cantidad
-export const decreaseQuantity = (id) => {
-  let cart = getCart()
-  const item = cart.find(i => i.id === id)
+export function checkoutCart() {
+  const cart = getCart()
 
-  if (item) {
-    item.quantity -= 1
-
-    if (item.quantity <= 0) {
-      cart = cart.filter(i => i.id !== id)
-    }
+  if (cart.length === 0) {
+    alert('Tu carrito está vacío.')
+    return []
   }
 
-  saveCart(cart)
-  window.dispatchEvent(new Event('cartUpdated'))
+  clearCart()
+  alert('Compra realizada exitosamente. Gracias por comprar en BookFlow.')
+  return []
 }

@@ -1,20 +1,17 @@
-import { useParams, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { getBook } from '../api'
-import { addToCart } from '../cart'
+import { useParams, useNavigate } from 'react-router-dom'
+import { getBook, getCategories } from '../api'
 import EnrichedBookImage from './EnrichedBookImage'
 import PriceBadge from './PriceBadge'
 import AvailabilityBadge from './AvailabilityBadge'
+import { addToCart, getCart } from '../cart'
 
-const CATEGORY_NAMES = {
-  1: 'Ficción',
-  2: 'No Ficción',
-  3: 'Ciencia',
-  4: 'Historia',
-  5: 'Filosofía',
-  6: 'Tecnología',
-  7: 'Arte',
-  8: 'Economía',
+function getStock(book) {
+  return book.stock ?? book.available_units ?? book.unidades_disponibles ?? book.units_available ?? null
+}
+
+function getCondition(book) {
+  return book.condition ?? book.estado ?? book.estado_libro ?? book.book_condition ?? null
 }
 
 export default function BookDetail() {
@@ -22,147 +19,144 @@ export default function BookDetail() {
   const navigate = useNavigate()
 
   const [book, setBook] = useState(null)
+  const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
-  const [added, setAdded] = useState(false)
+  const [cartQuantity, setCartQuantity] = useState(0)
 
   useEffect(() => {
-    getBook(id)
-      .then(data => {
-        const result = Array.isArray(data) ? data[0] : data
-        setBook(result)
-        setLoading(false)
-      })
-      .catch(() => {
-        setBook(null)
-        setLoading(false)
-      })
+    async function load() {
+      setLoading(true)
+
+      const [bookData, categoriesData] = await Promise.all([
+        getBook(id),
+        getCategories()
+      ])
+
+      setBook(bookData)
+      setCategories(categoriesData || [])
+
+      const currentCart = getCart()
+      const existing = currentCart.find(item => Number(item.id) === Number(id))
+      setCartQuantity(existing?.quantity || 0)
+
+      setLoading(false)
+    }
+
+    load()
   }, [id])
 
-  if (loading) return <p style={{ padding: '20px' }}>Cargando...</p>
-  if (!book) return <p style={{ padding: '20px' }}>No se encontró el libro</p>
+  if (loading) {
+    return <main className="book-detail-page"><p>Cargando libro...</p></main>
+  }
 
-  const category = CATEGORY_NAMES[book.category_id]
-  const inStock = book.stock === undefined || book.stock === null || Number(book.stock) > 0
-  const description = book.normalized_description || book.description
-  const publisher = book.normalized_publisher || book.publisher
+  if (!book) {
+    return <main className="book-detail-page"><p>Libro no encontrado.</p></main>
+  }
 
-  const handleAddToCart = () => {
-    addToCart(book)
-    setAdded(true)
-    setTimeout(() => setAdded(false), 2000)
+  const category = categories.find(c => Number(c.id) === Number(book.category_id))
+  const stock = getStock(book)
+  const condition = getCondition(book)
+
+  const numericStock =
+    stock === null || stock === undefined || stock === '' ? null : Number(stock)
+
+  const isAvailable =
+    numericStock === null || numericStock > 0
+
+  const reachedStock =
+    numericStock !== null && cartQuantity >= numericStock
+
+  const handleAdd = () => {
+    addToCart({ ...book, stock: numericStock })
+
+    const currentCart = getCart()
+    const existing = currentCart.find(item => Number(item.id) === Number(book.id))
+    setCartQuantity(existing?.quantity || 0)
   }
 
   return (
-    <div className="detail-page">
+    <main className="book-detail-page">
+      <button className="back-link" onClick={() => navigate('/')}>
+        ← Volver al catálogo
+      </button>
 
-      <header className="store-header">
-        <div className="header-inner">
-          <div
-            className="header-logo"
-            style={{ cursor: 'pointer' }}
-            onClick={() => navigate('/')}
-          >
-            <div className="logo-icon">📚</div>
-            <div>
-              <div className="logo-text">BookFlow</div>
-              <div className="logo-tagline">Tu librería</div>
-            </div>
-          </div>
+      <section className="book-detail">
+        <div className="book-detail-cover">
+          <EnrichedBookImage book={book} height={390} borderRadius="12px" />
         </div>
-      </header>
 
-      <div className="detail-breadcrumb">
-        <button className="back-btn" onClick={() => navigate('/')}>
-          ← Volver al catálogo
-        </button>
-      </div>
+        <div className="book-detail-info">
+          <span className="book-detail-category">
+            {category?.name || 'Sin categoría'}
+          </span>
 
-      <div className="detail-body">
-
-        <aside className="detail-cover-wrap">
-          <EnrichedBookImage
-            book={book}
-            height={390}
-            borderRadius="var(--radius-md)"
-          />
-        </aside>
-
-        <main className="detail-info">
-
-          {category && (
-            <span className="detail-category">{category}</span>
-          )}
-
-          <h1 className="detail-title">{book.title}</h1>
-
-          {book.subtitle && (
-            <p style={{ fontSize: '1rem', color: '#777', fontStyle: 'italic' }}>
-              {book.subtitle}
-            </p>
-          )}
+          <h1>{book.title}</h1>
 
           <p className="detail-author">
-            por <strong>{book.author}</strong>
+            por <strong>{book.author || 'Autor no disponible'}</strong>
           </p>
 
           <PriceBadge book={book} size="lg" />
 
-          {book.stock !== undefined && book.stock !== null && (
-            <div style={{ marginTop: '4px', marginBottom: '8px' }}>
-              <AvailabilityBadge stock={book.stock} />
-            </div>
-          )}
-
-          <div className="detail-divider" />
-
-          <div className="detail-meta-grid">
-            {publisher && (
-              <div className="detail-meta-item">
-                <span className="detail-meta-label">Editorial</span>
-                <span className="detail-meta-value">{publisher}</span>
+          <div className="detail-meta">
+            {book.publisher && (
+              <div>
+                <span>Editorial</span>
+                <strong>{book.publisher}</strong>
               </div>
             )}
 
             {book.publication_year && (
-              <div className="detail-meta-item">
-                <span className="detail-meta-label">Año</span>
-                <span className="detail-meta-value">{book.publication_year}</span>
+              <div>
+                <span>Año</span>
+                <strong>{book.publication_year}</strong>
               </div>
             )}
 
             {book.isbn && (
-              <div className="detail-meta-item">
-                <span className="detail-meta-label">ISBN</span>
-                <span className="detail-meta-value">{book.isbn}</span>
+              <div>
+                <span>ISBN</span>
+                <strong>{book.isbn}</strong>
               </div>
             )}
 
-            {book.condition && (
-              <div className="detail-meta-item">
-                <span className="detail-meta-label">Condición</span>
-                <span className="detail-meta-value">{book.condition}</span>
+            {condition && (
+              <div>
+                <span>Estado</span>
+                <strong>{condition}</strong>
+              </div>
+            )}
+
+            <div>
+              <span>Disponibilidad</span>
+              <AvailabilityBadge stock={stock} />
+            </div>
+
+            {cartQuantity > 0 && (
+              <div>
+                <span>En carrito</span>
+                <strong>{cartQuantity} unidad(es)</strong>
               </div>
             )}
           </div>
 
-          {description && (
-            <>
-              <div className="detail-divider" />
-              <p className="detail-description">{description}</p>
-            </>
-          )}
+          <p className="book-description">
+            {book.description || 'Libro enriquecido automáticamente desde fuentes bibliográficas externas.'}
+          </p>
 
           <button
-            className="detail-buy-btn"
-            disabled={!inStock}
-            onClick={handleAddToCart}
-            style={{ opacity: inStock ? 1 : 0.45, cursor: inStock ? 'pointer' : 'not-allowed' }}
+            className="buy-button"
+            disabled={!isAvailable || reachedStock}
+            onClick={handleAdd}
           >
-            {added ? '✓ Agregado al carrito' : inStock ? 'Comprar ahora 🛒' : 'Sin stock'}
+            {!isAvailable
+              ? 'Agotado'
+              : reachedStock
+                ? 'Stock máximo en carrito'
+                : 'Agregar al carrito 🛒'}
           </button>
-
-        </main>
-      </div>
-    </div>
+        </div>
+      </section>
+    </main>
   )
 }

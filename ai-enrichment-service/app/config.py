@@ -1,16 +1,16 @@
-from pydantic_settings import BaseSettings
+import os
+from dotenv import load_dotenv
 
+load_dotenv()
 
-class Settings(BaseSettings):
-    DATABASE_URL: str = "postgresql://bookflow:bookflow123@enrichment-db:5432/enrichment_db"
-    GOOGLE_BOOKS_API_KEY: str = ""
-    OPEN_LIBRARY_BASE_URL: str = "https://openlibrary.org"
-    CROSSREF_BASE_URL: str = "https://api.crossref.org"
-    CATALOG_SERVICE_URL: str = "http://catalog-service:8003"
-    SERVICE_PORT: int = 8004
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql://postgres:bookflow123@enrichment-db:5432/enrichment_db"
+)
 
-    class Config:
-        env_file = ".env"
+CATALOG_SERVICE_URL = os.getenv(
+    "CATALOG_SERVICE_URL",
+    "http://catalog-service:8003"
+)
 
-
-settings = Settings()
+PORT = int(os.getenv("PORT", 8004))

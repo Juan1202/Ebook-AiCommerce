@@ -1,58 +1,100 @@
-export default function CatalogFilters({ filters, onChange }) {
-  const set = (key, val) => onChange({ ...filters, [key]: val })
-  const hasActive = filters.minPrice || filters.maxPrice || filters.condition
+export default function CatalogFilters({ categories = [], filters = {}, setFilters }) {
+  const update = (field, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [field]: value
+    }))
+  }
+
+  const clearFilters = () => {
+    setFilters({
+      category_id: '',
+      condition: '',
+      publisher: '',
+      publication_year: '',
+      min_price: '',
+      max_price: ''
+    })
+  }
 
   return (
-    <div className="catalog-filters">
-      <div className="filter-row">
-        <div className="filter-group">
-          <label className="filter-label">Condición</label>
+    <section className="filters-section">
+      <div className="category-tabs">
+        <button
+          className={!filters.category_id ? 'active' : ''}
+          onClick={() => update('category_id', '')}
+        >
+          Todos
+        </button>
+
+        {categories.map(category => (
+          <button
+            key={category.id}
+            className={String(filters.category_id) === String(category.id) ? 'active' : ''}
+            onClick={() => update('category_id', category.id)}
+          >
+            {category.name}
+          </button>
+        ))}
+      </div>
+
+      <div className="advanced-filters">
+        <label>
+          Condición
           <select
-            className="filter-select"
             value={filters.condition || ''}
-            onChange={e => set('condition', e.target.value)}
+            onChange={e => update('condition', e.target.value)}
           >
             <option value="">Todas</option>
-            <option value="NUEVO">Nuevo</option>
-            <option value="BUENO">Bueno</option>
-            <option value="ACEPTABLE">Aceptable</option>
-            <option value="DETERIORADO">Deteriorado</option>
+            <option value="nuevo">Nuevo</option>
+            <option value="usado">Usado</option>
+            <option value="regular">Regular</option>
           </select>
-        </div>
+        </label>
 
-        <div className="filter-group">
-          <label className="filter-label">Precio mínimo</label>
+        <label>
+          Editorial
           <input
-            className="filter-input"
+            value={filters.publisher || ''}
+            onChange={e => update('publisher', e.target.value)}
+            placeholder="Editorial"
+          />
+        </label>
+
+        <label>
+          Año
+          <input
             type="number"
-            min="0"
+            value={filters.publication_year || ''}
+            onChange={e => update('publication_year', e.target.value)}
+            placeholder="Año"
+          />
+        </label>
+
+        <label>
+          Precio mínimo
+          <input
+            type="number"
+            value={filters.min_price || ''}
+            onChange={e => update('min_price', e.target.value)}
             placeholder="$ Min"
-            value={filters.minPrice || ''}
-            onChange={e => set('minPrice', e.target.value)}
           />
-        </div>
+        </label>
 
-        <div className="filter-group">
-          <label className="filter-label">Precio máximo</label>
+        <label>
+          Precio máximo
           <input
-            className="filter-input"
             type="number"
-            min="0"
+            value={filters.max_price || ''}
+            onChange={e => update('max_price', e.target.value)}
             placeholder="$ Max"
-            value={filters.maxPrice || ''}
-            onChange={e => set('maxPrice', e.target.value)}
           />
-        </div>
+        </label>
 
-        {hasActive && (
-          <button
-            className="filter-clear-btn"
-            onClick={() => onChange({ condition: '', minPrice: '', maxPrice: '' })}
-          >
-            Limpiar filtros
-          </button>
-        )}
+        <button className="clear-filters" onClick={clearFilters}>
+          Limpiar filtros
+        </button>
       </div>
-    </div>
+    </section>
   )
 }
