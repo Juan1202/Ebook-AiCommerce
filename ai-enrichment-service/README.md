@@ -428,3 +428,22 @@ alembic downgrade -1
 Migraciones del Sprint 2:
 - `001_create_enrichment_request.py`
 - `002_create_enrichment_result.py`
+## DEV 2 Contribution Notes
+
+This contribution focuses on the normalization pipeline used in the AI Enrichment Service.
+
+### Implemented responsibilities
+- Metadata cleanup for titles and author names
+- ISBN validation and ISBN-10 to ISBN-13 conversion
+- Duplicate detection before persistence
+- Multi-source merge strategy using confidence score
+
+### Technical impact
+These improvements ensure consistency across heterogeneous external APIs and reduce data redundancy in the enrichment workflow.
+
+### Validation
+Unit tests were added and executed for:
+- ISBN conversion
+- Author formatting
+- Duplicate detection
+- Source merging behavior
