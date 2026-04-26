@@ -27,6 +27,8 @@ class BookCreateRequest(BaseModel):
     description: Optional[str] = None
     cover_url: Optional[str] = None
     price: Optional[int] = None
+    condition: Optional[str] = None
+    stock: Optional[int] = None
     published_flag: bool = False
 
 
@@ -40,6 +42,8 @@ class BookUpdateRequest(BaseModel):
     cover_url: Optional[str] = None
     isbn: Optional[str] = None
     category_id: Optional[int] = None
+    condition: Optional[str] = None
+    stock: Optional[int] = None
 
 
 class BookResponse(BaseModel):
@@ -56,6 +60,8 @@ class BookResponse(BaseModel):
     description: Optional[str]
     cover_url: Optional[str]
     price: Optional[int]
+    condition: Optional[str]
+    stock: Optional[int]
     enriched_flag: bool
     published_flag: bool
     created_at: Optional[datetime]
@@ -66,8 +72,12 @@ def _resp(b) -> BookResponse:
         id=b.id, title=b.title, subtitle=b.subtitle, author=b.author,
         publisher=b.publisher, publication_year=b.publication_year, volume=b.volume,
         isbn=b.isbn, issn=b.issn, category_id=b.category_id, description=b.description,
-        cover_url=b.cover_url, price=b.price, enriched_flag=b.enriched_flag,
-        published_flag=b.published_flag, created_at=b.created_at,
+        cover_url=b.cover_url, price=b.price,
+        condition=b.condition,
+        stock=b.stock,
+        enriched_flag=b.enriched_flag,
+        published_flag=b.published_flag,
+        created_at=b.created_at,
     )
 
 

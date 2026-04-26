@@ -1,7 +1,6 @@
 import datetime
 
-from sqlalchemy import (Boolean, Column, DateTime, Integer, String,
-                        Text, create_engine)
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -21,6 +20,7 @@ class CategoryModel(Base):
 
 class BookModel(Base):
     __tablename__ = "books"
+
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(500), nullable=False, index=True)
     subtitle = Column(String(500), nullable=True)
@@ -34,11 +34,14 @@ class BookModel(Base):
     description = Column(Text, nullable=True)
     cover_url = Column(String(500), nullable=True)
     price = Column(Integer, nullable=True)
+
+    condition = Column(String(100), nullable=True)
+    stock = Column(Integer, nullable=True)
+
     enriched_flag = Column(Boolean, default=False)
     published_flag = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow,
-                        onupdate=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
 
 def get_db():

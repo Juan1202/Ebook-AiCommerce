@@ -7,10 +7,21 @@ from app.infrastructure import catalog_repository
 
 
 def create_book(db: Session, **kwargs) -> Book:
-    book = Book(id=None, enriched_flag=False, price=kwargs.pop("price", None), created_at=None, updated_at=None, **kwargs)
+    book = Book(
+        id=None,
+        enriched_flag=False,
+        price=kwargs.pop("price", None),
+        condition=kwargs.pop("condition", None),
+        stock=kwargs.pop("stock", None),
+        created_at=None,
+        updated_at=None,
+        **kwargs
+    )
+
     errors = book.validate()
     if errors:
         raise ValueError(", ".join(errors))
+
     return catalog_repository.create_book(db, book)
 
 
@@ -18,8 +29,7 @@ def get_book(db: Session, book_id: int) -> Optional[Book]:
     return catalog_repository.get_book(db, book_id)
 
 
-def list_books(db: Session, skip: int = 0, limit: int = 20,
-               published_only: bool = False) -> List[Book]:
+def list_books(db: Session, skip: int = 0, limit: int = 20, published_only: bool = False) -> List[Book]:
     return catalog_repository.get_all_books(db, skip, limit, published_only)
 
 

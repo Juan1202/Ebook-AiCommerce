@@ -25,3 +25,10 @@ env/
 # OS
 .DS_Store
 Thumbs.db
+#Claude
+-p/
+.claude/
+CLAUDE.md
+@echo off.bat
+
+BookFlow_Sprint1_E2E.postman_collection.json

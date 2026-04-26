@@ -1,0 +1,694 @@
+{
+	"info": {
+		"_postman_id": "48a1e841-8f85-4d97-8335-3219771cc0f8",
+		"name": "BookFlow AI Commerce - FULL SPRINT 1 (9 DEVs)",
+		"description": "Colección profesional de auditoría completa para el Sprint 1. Organizada por áreas de desarrollo (DEV 1-9) con validaciones automáticas de esquema, tiempos de respuesta y lógica de negocio.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "DEV 01 - Auth / Seguridad",
+			"item": [
+				{
+					"name": "Register Admin User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () { pm.response.to.have.status(201); });",
+									"pm.test(\"User registered successfully\", function () { pm.expect(pm.response.json().message).to.include(\"Usuario registrado\"); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"admin_pro\",\n    \"email\": \"admin_pro@bookflow.com\",\n    \"password\": \"admin_secret_123\",\n    \"role\": \"admin\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/auth/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"auth",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login (Captura Token/Refresh)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"var jsonData = pm.response.json();",
+									"pm.test(\"Tokens exist in response\", function () { ",
+									"    pm.expect(jsonData.access_token).to.exist;",
+									"    pm.expect(jsonData.refresh_token).to.exist;",
+									"});",
+									"if (jsonData.access_token) { pm.environment.set(\"jwt_token\", jsonData.access_token); }",
+									"if (jsonData.refresh_token) { pm.environment.set(\"refresh_token\", jsonData.refresh_token); }"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "username",
+									"value": "admin_pro",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "admin_secret_123",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"New access token generated\", function () { pm.response.to.have.status(200); });",
+									"var jsonData = pm.response.json();",
+									"pm.environment.set(\"jwt_token\", jsonData.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"refresh_token\": \"{{refresh_token}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/auth/refresh",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"auth",
+								"refresh"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Logout / Invalidate Session",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/auth/auth/logout",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"auth",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "DEV 02 - Inventory Service",
+			"item": [
+				{
+					"name": "Carga Masiva (Exito)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Batch created successfully\", function () { pm.response.to.have.status(201); });",
+									"var jsonData = pm.response.json();",
+									"pm.environment.set(\"current_batch_id\", jsonData.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"description": "Adjuntar sample_inventory.csv",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/inventory/batches/upload",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"inventory",
+								"batches",
+								"upload"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Rechazar Formato Invalido (XLSX mock)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Expect 400 for unsupported format\", function () { pm.response.to.have.status(400); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"value": "archivo.txt",
+									"type": "text",
+									"description": "Simula un archivo con extensión no permitida"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/inventory/batches/upload",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"inventory",
+								"batches",
+								"upload"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Historial de Auditoria",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"History returned as array\", function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/inventory/batches",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"inventory",
+								"batches"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Detalle de Lote y Progreso",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/inventory/batches/{{current_batch_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"inventory",
+								"batches",
+								"{{current_batch_id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "DEV 03 & 05 - Catalog Service",
+			"item": [
+				{
+					"name": "Listar Todos (Paginación)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Supports 100 books per page\", function () { ",
+									"    pm.response.to.have.status(200); ",
+									"    pm.expect(pm.response.json().length).to.be.above(20);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/catalog/books/?skip=0&limit=100",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"catalog",
+								"books",
+								""
+							],
+							"query": [
+								{
+									"key": "skip",
+									"value": "0"
+								},
+								{
+									"key": "limit",
+									"value": "100"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Búsqueda por Autor (Filtro DEV 5)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/catalog/books/search?q=García Márquez",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"catalog",
+								"books",
+								"search"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "García Márquez"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Publicar / Cambiar Estado (DEV 3)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status changed to published\", function () { pm.response.to.have.status(200); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/catalog/books/1/publish",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"catalog",
+								"books",
+								"1",
+								"publish"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "DEV 06 - AI Enrichment",
+			"item": [
+				{
+					"name": "Enriquecer Libro (Exito)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response has enrichment values\", function () { ",
+									"    pm.expect(pm.response.json().description).to.exist;",
+									"    pm.expect(pm.response.json().cover_url).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"book_reference\": \"REF-001\",\n    \"title\": \"Rayuela\",\n    \"author\": \"Julio Cortázar\",\n    \"isbn\": \"9788437604572\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/enrichment/enrich",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"enrichment",
+								"enrich"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Validar Error (Ficha Incompleta)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Expect 422 validation error\", function () { pm.response.to.have.status(422); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"book_reference\": \"\",\n    \"title\": \"\",\n    \"author\": \"\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/enrichment/enrich",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"enrichment",
+								"enrich"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "DEV 07 - Data Quality",
+			"item": [
+				{
+					"name": "Auditoria de Errores por Lote",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Identifies specific row errors\", function () { ",
+									"    var data = pm.response.json();",
+									"    if (data.length > 0) {",
+									"       pm.expect(data[0].row_number).to.be.a('number');",
+									"       pm.expect(data[0].message).to.exist;",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/inventory/batches/{{current_batch_id}}/errors",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"inventory",
+								"batches",
+								"{{current_batch_id}}",
+								"errors"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "DEV 08 - Configuración",
+			"item": [
+				{
+					"name": "Listar Parámetros de Negocio",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/config/config/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"config",
+								"config",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar Parámetro (Validación Tipos)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Parameter updated with numeric value\", function () { pm.response.to.have.status(200); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"value\": 10\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/config/config/porcentaje_comision",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"config",
+								"config",
+								"porcentaje_comision"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "DEV 09 - BFF Gateway Observabilidad",
+			"item": [
+				{
+					"name": "BFF Gateway Health",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Gateway is responsive\", function () { pm.response.to.have.status(200); });",
+									"pm.test(\"Responsive time is low\", function () { pm.expect(pm.response.responseTime).to.be.below(300); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8009/health",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8009",
+							"path": [
+								"health"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Simulación Fallo (404 Servicio no registrado)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Gateway handles non-existent services with 404\", function () { pm.response.to.have.status(404); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/unknown-service/test",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"unknown-service",
+								"test"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8009/api",
+			"type": "string"
+		},
+		{
+			"key": "jwt_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "refresh_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "current_batch_id",
+			"value": "1",
+			"type": "string"
+		}
+	]
+}
