@@ -5,7 +5,7 @@ import pandas as pd
 from fastapi import FastAPI, UploadFile, File
 from app.database import Base, engine, SessionLocal
 from app.models import EnrichmentRequest, EnrichmentResult
-from app.external_apis import google_books, open_library
+from app.external_apis import google_books, open_library, crossref
 from app.config import CATALOG_SERVICE_URL
 
 
@@ -170,43 +170,62 @@ def catalog_book_exists(isbn: str, title: str):
         return None
 
 
-def choose_best_result(google_result, open_result, fallback_result):
-    if google_result and open_result:
-        selected = google_result.copy()
-        selected["source"] = "Google Books + Open Library"
+def choose_best_result(google_result, open_result, crossref_result, fallback_result):
+    available_results = [
+        result for result in [google_result, open_result, crossref_result]
+        if result
+    ]
 
-        if not clean_value(selected.get("title")):
-            selected["title"] = open_result.get("title")
+    if not available_results:
+        return fallback_result
 
-        if not clean_value(selected.get("author")):
-            selected["author"] = open_result.get("author")
-
-        if not clean_value(selected.get("publisher")):
-            selected["publisher"] = open_result.get("publisher")
-
-        if not clean_value(selected.get("publication_year")):
-            selected["publication_year"] = open_result.get("publication_year")
-
-        if not clean_value(selected.get("description")):
-            selected["description"] = open_result.get("description")
-
-        if not clean_value(selected.get("cover")):
-            selected["cover"] = open_result.get("cover")
-
-        google_categories = google_result.get("categories") or []
-        open_categories = open_result.get("categories") or []
-        selected["categories"] = list(dict.fromkeys(google_categories + open_categories))
-        selected["confidence"] = "HIGH"
-
-        return selected
+    selected = {}
 
     if google_result:
-        return google_result
+        selected = google_result.copy()
+    elif open_result:
+        selected = open_result.copy()
+    elif crossref_result:
+        selected = crossref_result.copy()
 
-    if open_result:
-        return open_result
+    for result in [open_result, google_result, crossref_result]:
+        if not result:
+            continue
 
-    return fallback_result
+        if not clean_value(selected.get("title")):
+            selected["title"] = result.get("title")
+
+        if not clean_value(selected.get("author")):
+            selected["author"] = result.get("author")
+
+        if not clean_value(selected.get("publisher")):
+            selected["publisher"] = result.get("publisher")
+
+        if not clean_value(selected.get("publication_year")):
+            selected["publication_year"] = result.get("publication_year")
+
+        if not clean_value(selected.get("description")):
+            selected["description"] = result.get("description")
+
+        if not clean_value(selected.get("cover")):
+            selected["cover"] = result.get("cover")
+
+    categories = []
+    sources = []
+
+    for result in available_results:
+        sources.append(result.get("source"))
+        categories.extend(result.get("categories") or [])
+
+    selected["categories"] = list(dict.fromkeys(categories))
+    selected["source"] = " + ".join(dict.fromkeys(sources))
+
+    if len(available_results) >= 2:
+        selected["confidence"] = "HIGH"
+    else:
+        selected["confidence"] = selected.get("confidence") or "MEDIUM"
+
+    return selected
 
 
 def sync_with_catalog(result: dict, isbn: str):
@@ -316,12 +335,16 @@ def enrich_book_logic(payload: dict):
 
         google_result = None
         open_result = None
+        crossref_result = None
 
         if isbn or title:
             google_result = google_books(isbn=isbn, title=title, author=author)
 
-        if isbn:
+        if isbn or title:
             open_result = open_library(isbn=isbn, title=title, author=author)
+
+        if isbn or title:
+            crossref_result = crossref(isbn=isbn, title=title, author=author)
 
         fallback_result = {
             "source": "Fallback",
@@ -336,9 +359,10 @@ def enrich_book_logic(payload: dict):
         }
 
         result = choose_best_result(
-            google_result,
-            open_result,
-            fallback_result
+        google_result,
+        open_result,
+        crossref_result,
+        fallback_result
         )
 
         if not clean_value(result.get("title")):
@@ -400,6 +424,7 @@ def external_status():
     return {
         "google_books": "ACTIVE",
         "open_library": "ACTIVE",
+        "crossref": "ACTIVE",
         "catalog_service": CATALOG_SERVICE_URL
     }
 
