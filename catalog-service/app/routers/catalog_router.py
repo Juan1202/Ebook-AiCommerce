@@ -86,7 +86,9 @@ def create(req: BookCreateRequest, db: Session = Depends(get_db)):
     try:
         return _resp(create_book(db, **req.model_dump()))
     except ValueError as e:
-        raise HTTPException(status_code=422, detail=str(e))
+        msg = str(e)
+        status = 409 if "Ya existe un libro con el ISBN" in msg else 422
+        raise HTTPException(status_code=status, detail=msg)
 
 
 @router.get("/search", response_model=List[BookResponse])

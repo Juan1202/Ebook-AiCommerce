@@ -1162,6 +1162,121 @@ body {
   gap: 16px;
 }
 
+/* ── Header actions (admin link + cart) ─────────────────────── */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.header-admin-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.9);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid rgba(255,255,255,0.2);
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.header-admin-btn:hover {
+  background: rgba(255,255,255,0.22);
+  color: #ffffff;
+}
+
+.cart-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.12);
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 1.1rem;
+  transition: var(--transition);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.cart-btn:hover {
+  background: rgba(255,255,255,0.22);
+}
+
+.cart-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  background: var(--gold);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid var(--primary);
+}
+
+/* ── Book skeleton loader ─────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+
+.book-skeleton {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  aspect-ratio: 3 / 4;
+  background: linear-gradient(
+    90deg,
+    var(--border-light) 25%,
+    #e9e9e6 50%,
+    var(--border-light) 75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+/* ── Empty state ──────────────────────────────────────────────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 3.5rem;
+  margin-bottom: 1rem;
+  opacity: 0.6;
+}
+
+.empty-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+.empty-sub {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
 .cart-item {
   display: grid;
   grid-template-columns: 80px 1fr auto;

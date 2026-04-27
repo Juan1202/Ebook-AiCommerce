@@ -28,6 +28,16 @@ const Sidebar = ({ paginaActual, onNavegar }) => {
         ))}
       </nav>
 
+      <a
+        href="http://localhost:3000"
+        target="_blank"
+        rel="noreferrer"
+        style={storeLinkStyle}
+      >
+        <span style={iconStyle}>⊙</span>
+        Ver tienda
+      </a>
+
       <div style={footer}>
         <div style={dot} />
         <span style={footerText}>Sistema activo</span>
@@ -85,10 +95,10 @@ const navItem = (active) => ({
   padding: '10px 12px',
   borderRadius: '8px',
   border: 'none',
-  background: active ? '#1e293b' : 'transparent',
-  color: active ? '#e2e8f0' : '#64748b',
+  background: active ? 'rgba(16,185,129,0.12)' : 'transparent',
+  color: active ? '#10b981' : '#64748b',
   fontSize: '14px',
-  fontWeight: active ? '500' : '400',
+  fontWeight: active ? '600' : '400',
   cursor: 'pointer',
   textAlign: 'left',
   transition: 'all 0.15s ease',
@@ -119,4 +129,21 @@ const dot = {
 const footerText = {
   fontSize: '12px',
   color: '#475569',
+};
+
+const storeLinkStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '10px',
+  padding: '10px 12px',
+  borderRadius: '8px',
+  border: '1px solid #1e293b',
+  background: 'transparent',
+  color: '#38bdf8',
+  fontSize: '14px',
+  fontWeight: '400',
+  cursor: 'pointer',
+  textDecoration: 'none',
+  marginBottom: '12px',
+  transition: 'all 0.15s ease',
 };

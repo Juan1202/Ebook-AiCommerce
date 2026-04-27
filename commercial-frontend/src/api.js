@@ -26,7 +26,7 @@ export async function getBooks(params = {}) {
     return { items: [], total: 0 }
   } catch (error) {
     console.error('Error cargando libros desde BFF:', error)
-    return { items: [], total: 0 }
+    return { items: [], total: 0, _error: true }
   }
 }
 

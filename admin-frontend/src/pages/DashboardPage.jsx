@@ -122,6 +122,18 @@ const DashboardPage = ({ onNavegar }) => {
             desc="Estadísticas y análisis de los datos cargados"
             onClick={() => onNavegar('reportes')}
           />
+          <QuickCard
+            icon="◎"
+            titulo="Precios IA"
+            desc="Revisar y recalcular precios sugeridos"
+            onClick={() => onNavegar('precios')}
+          />
+          <QuickCard
+            icon="⊙"
+            titulo="Ver Tienda"
+            desc="Abrir el catálogo comercial en una nueva pestaña"
+            href="http://localhost:3000"
+          />
         </div>
       </section>
     </div>
@@ -161,15 +173,28 @@ const ServiceCardSkeleton = () => (
   </div>
 );
 
-const QuickCard = ({ icon, titulo, desc, onClick }) => (
-  <button style={quickCard} onClick={onClick}>
-    <span style={quickIcon}>{icon}</span>
-    <div>
-      <p style={quickTitle}>{titulo}</p>
-      <p style={quickDesc}>{desc}</p>
-    </div>
-  </button>
-);
+const QuickCard = ({ icon, titulo, desc, onClick, href }) => {
+  if (href) {
+    return (
+      <a href={href} target="_blank" rel="noreferrer" style={{ ...quickCard, textDecoration: 'none' }}>
+        <span style={quickIcon}>{icon}</span>
+        <div>
+          <p style={quickTitle}>{titulo}</p>
+          <p style={quickDesc}>{desc}</p>
+        </div>
+      </a>
+    );
+  }
+  return (
+    <button style={quickCard} onClick={onClick}>
+      <span style={quickIcon}>{icon}</span>
+      <div>
+        <p style={quickTitle}>{titulo}</p>
+        <p style={quickDesc}>{desc}</p>
+      </div>
+    </button>
+  );
+};
 
 export default DashboardPage;
 

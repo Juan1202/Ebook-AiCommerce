@@ -1,6 +1,7 @@
 from typing import List, Optional
 
 from sqlalchemy import or_
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.domain.book import Book, Category
@@ -108,7 +109,11 @@ def create_book(db: Session, book: Book) -> Book:
     )
 
     db.add(m)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise ValueError(f"Ya existe un libro con el ISBN {book.isbn}")
     db.refresh(m)
     return _book(m)
 

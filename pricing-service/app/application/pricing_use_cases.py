@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.domain.pricing import PricingDecision, PricingReference, BookCondition
-from app.infrastructure.pricing_repository import save_pricing_decision, get_latest_pricing_decision, get_pricing_history, get_pricing_decision_by_id
+from app.infrastructure.pricing_repository import save_pricing_decision, get_latest_pricing_decision, get_pricing_history, get_pricing_decision_by_id, get_all_pricing_decisions
 from app.infrastructure.adapters.ebay_adapter import EbayAdapter, MockEbayAdapter
 
 logger = logging.getLogger(__name__)
@@ -135,6 +135,10 @@ class PricingService:
         """Get explanation for a specific decision"""
         decision = get_pricing_decision_by_id(db, decision_id)
         return decision.explanation if decision else None
+
+    def list_all_decisions(self, db: Session, limit: int = 100) -> List[PricingDecision]:
+        """Get all recent pricing decisions"""
+        return get_all_pricing_decisions(db, limit)
 
     def get_external_api_status(self) -> Dict[str, Any]:
         """Get status of external APIs"""

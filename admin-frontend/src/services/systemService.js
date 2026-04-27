@@ -1,30 +1,41 @@
 const GATEWAY = 'http://localhost:8009';
 
-const SERVICES = [
-  { name: 'BFF Gateway',       key: 'bff',        url: `${GATEWAY}/health` },
-  { name: 'Auth Service',      key: 'auth',        url: `${GATEWAY}/api/auth/health` },
-  { name: 'Inventory Service', key: 'inventory',   url: `${GATEWAY}/api/inventory/health` },
-  { name: 'Catalog Service',   key: 'catalog',     url: `${GATEWAY}/api/catalog/health` },
-  { name: 'AI Enrichment',     key: 'enrichment',  url: `${GATEWAY}/api/enrichment/health` },
-  { name: 'Data Quality',      key: 'quality',     url: `${GATEWAY}/api/quality/health` },
-  { name: 'Config Module',     key: 'config',      url: `${GATEWAY}/api/config/health` },
-];
+const SERVICE_LABELS = {
+  auth:            'Auth Service',
+  inventory:       'Inventory Service',
+  catalog:         'Catalog Service',
+  pricing:         'Pricing Service',
+  'enrichment-real': 'AI Enrichment',
+  quality:         'Data Quality',
+  config:          'Config Module',
+};
 
 export async function getServicesHealth() {
-  const results = await Promise.allSettled(
-    SERVICES.map(async (svc) => {
-      try {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 3000);
-        const res = await fetch(svc.url, { signal: controller.signal });
-        clearTimeout(timer);
-        return { ...svc, status: res.ok ? 'online' : 'degraded' };
-      } catch {
-        return { ...svc, status: 'offline' };
-      }
-    })
-  );
-  return results.map((r) =>
-    r.status === 'fulfilled' ? r.value : { ...r.reason, status: 'offline' }
-  );
+  const bffEntry = { name: 'BFF Gateway', key: 'bff', status: 'offline' };
+
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(`${GATEWAY}/health`, { signal: controller.signal });
+    clearTimeout(timer);
+
+    if (!res.ok) {
+      return [{ ...bffEntry, status: 'degraded' }];
+    }
+
+    const data = await res.json();
+    bffEntry.status = 'online';
+
+    const serviceEntries = Object.entries(data.services ?? {})
+      .filter(([key]) => key in SERVICE_LABELS)
+      .map(([key, info]) => ({
+        name: SERVICE_LABELS[key],
+        key,
+        status: info.status === 'ok' ? 'online' : 'degraded',
+      }));
+
+    return [bffEntry, ...serviceEntries];
+  } catch {
+    return [bffEntry];
+  }
 }

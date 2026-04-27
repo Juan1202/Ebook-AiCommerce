@@ -13,7 +13,7 @@ def _reference_to_domain(model: PricingReferenceModel) -> PricingReference:
         price=model.price,
         currency=model.currency,
         observed_at=model.observed_at,
-        metadata=model.metadata or {}
+        metadata=model.extra_data or {}
     )
 
 
@@ -43,7 +43,7 @@ def save_pricing_decision(db: Session, decision: PricingDecision) -> PricingDeci
             price=ref.price,
             currency=ref.currency,
             observed_at=ref.observed_at,
-            metadata=ref.metadata
+            extra_data=ref.metadata
         )
         db.add(ref_model)
         reference_models.append(ref_model)
@@ -84,3 +84,10 @@ def get_pricing_decision_by_id(db: Session, decision_id: int) -> Optional[Pricin
         PricingDecisionModel.id == decision_id
     ).first()
     return _decision_to_domain(model) if model else None
+
+
+def get_all_pricing_decisions(db: Session, limit: int = 100) -> List[PricingDecision]:
+    models = db.query(PricingDecisionModel).order_by(
+        PricingDecisionModel.created_at.desc()
+    ).limit(limit).all()
+    return [_decision_to_domain(m) for m in models]

@@ -1,10 +1,10 @@
 import axios from "axios";
 
-const API = "http://localhost:8000/api/admin/pricing";
+const API = "http://localhost:8009/api/admin/pricing";
 
 // 🔹 Obtener lista de libros con precios
 export const getPricingList = async () => {
-  const res = await axios.get(`${API}/list`);
+  const res = await axios.get(`${API}`);
   return res.data;
 };
 

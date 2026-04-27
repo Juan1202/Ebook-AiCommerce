@@ -94,10 +94,7 @@
    📦 ROOT APP
 ========================= */
 #root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  border-inline: 1px solid var(--border);
+  width: 100%;
   min-height: 100svh;
   display: flex;
   flex-direction: column;
@@ -109,7 +106,8 @@
 ========================= */
 body {
   margin: 0;
-  background: var(--bg);
+  background: #020617;
+  color: #e2e8f0;
 }
 
 /* =========================

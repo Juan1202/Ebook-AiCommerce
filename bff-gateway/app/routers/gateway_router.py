@@ -77,9 +77,17 @@ async def admin_pricing_detail(book_id: str, request: Request) -> Response:
 
 @router.api_route(
     "/api/admin/pricing",
-    methods=["GET", "POST"],
+    methods=["GET"],
 )
-async def admin_pricing_root(request: Request) -> Response:
+async def admin_pricing_list(request: Request) -> Response:
+    return await proxy_request("pricing", "pricing/", request)
+
+
+@router.api_route(
+    "/api/admin/pricing",
+    methods=["POST"],
+)
+async def admin_pricing_calculate(request: Request) -> Response:
     return await proxy_request("pricing", "pricing/calculate", request)
 
 

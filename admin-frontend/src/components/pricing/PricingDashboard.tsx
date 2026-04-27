@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import PricingCard from "./PricingCard";
 import PricingFilters from "./PricingFilters";
+import { getPricingList } from "../../services/pricingService";
+import styles from "./PricingDashboard.module.css";
 
 interface PricingItem {
   book_id: string;
@@ -12,19 +14,30 @@ interface PricingItem {
 const PricingDashboard = () => {
   const [data, setData] = useState<PricingItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [filter, setFilter] = useState("all");
 
-  useEffect(() => {
-    setTimeout(() => {
-      setData([
-        { book_id: "1", title: "El Hobbit", price: 50000, isFallback: false },
-        { book_id: "2", title: "Clean Code", price: 70000, isFallback: true },
-      ]);
+  const load = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await getPricingList();
+      const items: PricingItem[] = (res.items || res || []).map((item: Record<string, unknown>) => ({
+        book_id: String(item.book_id ?? item.id ?? ""),
+        title: String(item.title ?? "Sin título"),
+        price: Number(item.suggested_price ?? item.price ?? 0),
+        isFallback: Boolean(item.is_fallback ?? item.isFallback ?? false),
+      }));
+      setData(items);
+    } catch {
+      setError("No se pudo conectar con el servicio de pricing.");
+      setData([]);
+    } finally {
       setLoading(false);
-    }, 1000);
-  }, []);
+    }
+  };
 
-  if (loading) return <p>Cargando...</p>;
+  useEffect(() => { load(); }, []);
 
   const filtered = data.filter((item) => {
     if (filter === "verified") return !item.isFallback;
@@ -32,16 +45,72 @@ const PricingDashboard = () => {
     return true;
   });
 
+  const verifiedCount = data.filter((i) => !i.isFallback).length;
+  const estimatedCount = data.filter((i) => i.isFallback).length;
+  const avgPrice = data.length
+    ? (data.reduce((s, i) => s + i.price, 0) / data.length).toFixed(2)
+    : "0.00";
+
   return (
-    <>
+    <div className={styles.page}>
+      <div className={styles.pageHeader}>
+        <div>
+          <h1 className={styles.pageTitle}>Panel de Precios</h1>
+          <p className={styles.pageSubtitle}>Motor de pricing inteligente con trazabilidad completa</p>
+        </div>
+        <button className={styles.refreshBtn} onClick={load} disabled={loading}>
+          {loading ? "Cargando…" : "↻ Actualizar"}
+        </button>
+      </div>
+
+      <div className={styles.kpiRow}>
+        <div className={`${styles.kpi} ${styles.kpiBlue}`}>
+          <span className={styles.kpiNum}>{data.length}</span>
+          <span className={styles.kpiLabel}>Total libros</span>
+        </div>
+        <div className={`${styles.kpi} ${styles.kpiGreen}`}>
+          <span className={styles.kpiNum}>{verifiedCount}</span>
+          <span className={styles.kpiLabel}>Verificados</span>
+        </div>
+        <div className={`${styles.kpi} ${styles.kpiOrange}`}>
+          <span className={styles.kpiNum}>{estimatedCount}</span>
+          <span className={styles.kpiLabel}>Estimados</span>
+        </div>
+        <div className={`${styles.kpi} ${styles.kpiPurple}`}>
+          <span className={styles.kpiNum}>${avgPrice}</span>
+          <span className={styles.kpiLabel}>Precio promedio</span>
+        </div>
+      </div>
+
       <PricingFilters filter={filter} setFilter={setFilter} />
 
-      <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
-        {filtered.map((item) => (
-          <PricingCard key={item.book_id} data={item} />
-        ))}
-      </div>
-    </>
+      {loading && (
+        <div className={styles.stateWrap}>
+          <div className={styles.spinner} />
+          <p className={styles.stateText}>Obteniendo precios…</p>
+        </div>
+      )}
+
+      {!loading && error && (
+        <div className={styles.errorBox}>
+          <span>⚠️</span> {error}
+        </div>
+      )}
+
+      {!loading && !error && filtered.length === 0 && (
+        <div className={styles.stateWrap}>
+          <p className={styles.stateText}>No hay libros con los filtros seleccionados.</p>
+        </div>
+      )}
+
+      {!loading && !error && (
+        <div className={styles.grid}>
+          {filtered.map((item) => (
+            <PricingCard key={item.book_id} data={item} />
+          ))}
+        </div>
+      )}
+    </div>
   );
 };
 

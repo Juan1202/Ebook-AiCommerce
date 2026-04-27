@@ -6,44 +6,70 @@ import Cart from './components/Cart'
 import { getCartCount } from './cart'
 import './index.css'
 
-function Header() {
+function Header({ searchQuery, onSearchChange }) {
   const [count, setCount] = useState(getCartCount())
 
   useEffect(() => {
     const update = () => setCount(getCartCount())
-    window.addEventListener('cart-updated', update)
-    window.addEventListener('storage', update)
+    globalThis.addEventListener('cart-updated', update)
+    globalThis.addEventListener('storage', update)
     return () => {
-      window.removeEventListener('cart-updated', update)
-      window.removeEventListener('storage', update)
+      globalThis.removeEventListener('cart-updated', update)
+      globalThis.removeEventListener('storage', update)
     }
   }, [])
 
   return (
-    <header className="app-header">
-      <Link to="/" className="brand">
-        <div className="brand-icon">📚</div>
-        <div>
-          <strong>BookFlow</strong>
-          <span>TU LIBRERÍA</span>
-        </div>
-      </Link>
+    <header className="store-header">
+      <div className="header-inner">
+        <Link to="/" className="header-logo">
+          <div className="logo-icon">📚</div>
+          <div>
+            <div className="logo-text">BookFlow</div>
+            <div className="logo-tagline">Tu librería</div>
+          </div>
+        </Link>
 
-      <Link to="/carrito" className="cart-link">
-        🛒 Carrito
-        {count > 0 && <span>{count}</span>}
-      </Link>
+        <div className="search-wrap">
+          <span className="search-icon">🔍</span>
+          <input
+            className="search-input"
+            type="text"
+            placeholder="Buscar por título, autor, ISBN…"
+            value={searchQuery}
+            onChange={e => onSearchChange(e.target.value)}
+          />
+        </div>
+
+        <div className="header-actions">
+          <a
+            href="http://localhost:3001"
+            target="_blank"
+            rel="noreferrer"
+            className="header-admin-btn"
+          >
+            Panel Admin →
+          </a>
+
+          <Link to="/carrito" className="cart-btn">
+            🛒
+            {count > 0 && <span className="cart-badge">{count}</span>}
+          </Link>
+        </div>
+      </div>
     </header>
   )
 }
 
 export default function App() {
+  const [searchQuery, setSearchQuery] = useState('')
+
   return (
     <BrowserRouter>
-      <Header />
+      <Header searchQuery={searchQuery} onSearchChange={setSearchQuery} />
 
       <Routes>
-        <Route path="/" element={<Catalogo />} />
+        <Route path="/" element={<Catalogo searchQuery={searchQuery} />} />
         <Route path="/libro/:id" element={<BookDetail />} />
         <Route path="/carrito" element={<Cart />} />
       </Routes>

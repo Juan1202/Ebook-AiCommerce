@@ -41,6 +41,27 @@ class APIStatusResponse(BaseModel):
     error_message: Optional[str]
 
 
+@router.get("/", response_model=List[PricingDecisionResponse])
+def list_pricing_decisions(limit: int = 100, db: Session = Depends(get_db)):
+    """List all recent pricing decisions"""
+    decisions = pricing_service.list_all_decisions(db, limit)
+    return [
+        PricingDecisionResponse(
+            id=d.id,
+            book_id=d.book_id,
+            condition=d.condition.value,
+            base_price=d.base_price,
+            condition_factor=d.condition_factor,
+            suggested_price=d.suggested_price,
+            references_used=d.references_used,
+            source=d.source,
+            explanation=d.explanation,
+            created_at=d.created_at.isoformat()
+        )
+        for d in decisions
+    ]
+
+
 @router.post("/calculate", response_model=PricingDecisionResponse)
 async def calculate_price(
     request: CalculatePriceRequest,
