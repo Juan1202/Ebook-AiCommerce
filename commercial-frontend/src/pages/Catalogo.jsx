@@ -2,8 +2,15 @@ import PropTypes from 'prop-types'
 import { useEffect, useMemo, useState } from 'react'
 import { getBooks, getCategories } from '../api'
 import BookCard from '../components/BookCard'
+import CatalogFilters from '../components/CatalogFilters'
 
-const DEFAULT_FILTERS = { condition: '', min_price: '', max_price: '' }
+const EMPTY_FILTERS = {
+  condition: '',
+  publisher: '',
+  publication_year: '',
+  min_price: '',
+  max_price: '',
+}
 
 const SKELETON_IDS = ['s0','s1','s2','s3','s4','s5','s6','s7','s8','s9','s10','s11']
 
@@ -14,6 +21,8 @@ function getCondition(book) {
 function bookMatchesFilters(book, cleanQuery, activeCat, filters) {
   const price = Number(book.price || book.suggested_price || 0)
   const condition = String(getCondition(book)).toLowerCase()
+  const publisher = String(book.publisher || book.editorial || '').toLowerCase()
+  const year = String(book.publication_year || book.year || book.año || '')
 
   if (cleanQuery) {
     const text = `${book.title || ''} ${book.author || ''} ${book.isbn || ''} ${book.publisher || ''}`.toLowerCase()
@@ -22,6 +31,8 @@ function bookMatchesFilters(book, cleanQuery, activeCat, filters) {
 
   if (activeCat && Number(book.category_id) !== Number(activeCat)) return false
   if (filters.condition && !condition.includes(filters.condition.toLowerCase())) return false
+  if (filters.publisher && !publisher.includes(filters.publisher.toLowerCase())) return false
+  if (filters.publication_year && year !== filters.publication_year) return false
   if (filters.min_price && price < Number(filters.min_price)) return false
   if (filters.max_price && price > Number(filters.max_price)) return false
 
@@ -38,6 +49,7 @@ export default function Catalogo({ searchQuery }) {
   const [books, setBooks] = useState([])
   const [categories, setCategories] = useState([])
   const [activeCat, setActiveCat] = useState('')
+  const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [loading, setLoading] = useState(true)
   const [serviceError, setServiceError] = useState(false)
 
@@ -66,8 +78,8 @@ export default function Catalogo({ searchQuery }) {
 
   const filteredBooks = useMemo(() => {
     const cleanQuery = searchQuery.trim().toLowerCase()
-    return books.filter(book => bookMatchesFilters(book, cleanQuery, activeCat, DEFAULT_FILTERS))
-  }, [books, searchQuery, activeCat])
+    return books.filter(book => bookMatchesFilters(book, cleanQuery, activeCat, filters))
+  }, [books, searchQuery, activeCat, filters])
 
   const sectionTitle = getSectionTitle(activeCat, categories, searchQuery)
 
@@ -99,6 +111,8 @@ export default function Catalogo({ searchQuery }) {
           ))}
         </div>
       </div>
+
+      <CatalogFilters filters={filters} setFilters={setFilters} />
 
       <main className="store-main">
         <div className="section-header">
