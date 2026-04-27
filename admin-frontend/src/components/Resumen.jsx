@@ -2,8 +2,8 @@ import React from "react";
 
 const Resumen = ({ lotes }) => {
   const total = lotes.length;
-  const completados = lotes.filter(l => l.estado === "COMPLETADO").length;
-  const errores = lotes.filter(l => l.estado === "ERROR").length;
+  const completados = lotes.filter(l => l.status === "COMPLETADO").length;
+  const errores = lotes.filter(l => l.status === "ERROR").length;
 
   return (
     <div style={container}>

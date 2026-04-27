@@ -116,7 +116,7 @@ services:
         condition: service_healthy
     networks:
       - bookflow-network
-    restart: on-failure
+    restart: always
 
   inventory-service:
     build: ./inventory-service
@@ -129,7 +129,7 @@ services:
         condition: service_healthy
     networks:
       - bookflow-network
-    restart: on-failure
+    restart: always
 
   catalog-service:
     build: ./catalog-service
@@ -142,7 +142,39 @@ services:
         condition: service_healthy
     networks:
       - bookflow-network
-    restart: on-failure
+    restart: always
+
+  enrichment-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${DB_NAME_ENRICHMENT:-enrichment_db}
+    volumes:
+      - enrichment-db-data:/var/lib/postgresql/data
+    networks:
+      - bookflow-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pricing-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${DB_NAME_PRICING:-pricing_db}
+    volumes:
+      - pricing-db-data:/var/lib/postgresql/data
+    networks:
+      - bookflow-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   ai-enrichment-mock:
     build: ./ai-enrichment-mock
@@ -151,6 +183,44 @@ services:
     networks:
       - bookflow-network
     restart: on-failure
+
+  ai-enrichment-service:
+    build: ./ai-enrichment-service
+    ports:
+      - "8004:8004"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@enrichment-db:5432/${DB_NAME_ENRICHMENT:-enrichment_db}
+      GOOGLE_BOOKS_API_KEY: ${GOOGLE_BOOKS_API_KEY:-}
+      OPEN_LIBRARY_BASE_URL: https://openlibrary.org
+      CROSSREF_BASE_URL: https://api.crossref.org
+      CATALOG_SERVICE_URL: http://catalog-service:8003
+      SERVICE_PORT: 8004
+    depends_on:
+      enrichment-db:
+        condition: service_healthy
+      catalog-service:
+        condition: service_started
+    networks:
+      - bookflow-network
+    restart: always
+
+  pricing-service:
+    build: ./pricing-service
+    ports:
+      - "8005:8005"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pricing-db:5432/${DB_NAME_PRICING:-pricing_db}
+      EBAY_APP_ID: ${EBAY_APP_ID:-}
+      EBAY_BASE_URL: https://api.ebay.com/buy/browse/v1
+      CATALOG_SERVICE_URL: http://catalog-service:8003
+      INVENTORY_SERVICE_URL: http://inventory-service:8002
+      SERVICE_PORT: 8005
+    depends_on:
+      pricing-db:
+        condition: service_healthy
+    networks:
+      - bookflow-network
+    restart: always
 
   data-quality-module:
     build: ./data-quality-module
@@ -175,7 +245,7 @@ services:
         condition: service_healthy
     networks:
       - bookflow-network
-    restart: on-failure
+    restart: always
 
   pricing-service:
     build: ./pricing-service
@@ -200,6 +270,8 @@ services:
       INVENTORY_SERVICE_URL: http://inventory-service:8002
       CATALOG_SERVICE_URL: http://catalog-service:8003
       AI_ENRICHMENT_URL: http://ai-enrichment-mock:8006
+      ENRICHMENT_SERVICE_URL: http://ai-enrichment-service:8004
+      PRICING_SERVICE_URL: http://pricing-service:8005
       DATA_QUALITY_URL: http://data-quality-module:8007
       CONFIG_MODULE_URL: http://config-module:8008
       PRICING_SERVICE_URL: http://pricing-service:8005
@@ -208,6 +280,8 @@ services:
       - inventory-service
       - catalog-service
       - ai-enrichment-mock
+      - ai-enrichment-service
+      - pricing-service
       - data-quality-module
       - config-module
       - pricing-service

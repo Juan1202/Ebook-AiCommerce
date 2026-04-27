@@ -36,8 +36,8 @@ const DetalleLote = ({ lote, cerrar }) => {
 
           <div style={row}>
             <span style={label}>Estado</span>
-            <span style={estado(lote.estado)}>
-              {lote.estado}
+            <span style={estado(lote.status)}>
+              {lote.status}
             </span>
           </div>
 
