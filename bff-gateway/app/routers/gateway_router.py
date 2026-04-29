@@ -1,7 +1,9 @@
 import asyncio
+import json
 
 import httpx
 from fastapi import APIRouter, Request, Response
+from fastapi.responses import JSONResponse
 
 from app.proxy import TIMEOUT, SERVICE_MAP, proxy_request
 
@@ -42,6 +44,47 @@ async def health():
 # ─────────────────────────────────────────
 # SPRINT 2 — Admin Pricing routes
 # ─────────────────────────────────────────
+
+@router.post("/api/admin/pricing/bulk-calculate")
+async def admin_pricing_bulk_calculate() -> JSONResponse:
+    """Fetch all catalog books and calculate a price for each one."""
+    catalog_url = SERVICE_MAP.get("catalog", "http://catalog-service:8003")
+    pricing_url = SERVICE_MAP.get("pricing", "http://pricing-service:8005")
+
+    async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+        try:
+            books_resp = await client.get(f"{catalog_url}/books", params={"limit": 500})
+            books_resp.raise_for_status()
+            books = books_resp.json()
+            if isinstance(books, dict):
+                books = books.get("items", books.get("data", []))
+        except Exception as exc:
+            return JSONResponse(
+                status_code=503,
+                content={"detail": f"No se pudo obtener el catálogo: {type(exc).__name__}"},
+            )
+
+        ok_count = 0
+        fail_count = 0
+        for book in books:
+            book_id = str(book.get("id", ""))
+            book_title = book.get("title", "Sin título")
+            condition = book.get("condition") or "BUENO"
+            valid_conditions = {"NUEVO", "BUENO", "ACEPTABLE", "DETERIORADO"}
+            if condition not in valid_conditions:
+                condition = "BUENO"
+            try:
+                await client.post(
+                    f"{pricing_url}/pricing/calculate",
+                    json={"book_id": book_id, "book_title": book_title, "condition": condition},
+                    timeout=10.0,
+                )
+                ok_count += 1
+            except Exception:
+                fail_count += 1
+
+    return JSONResponse(content={"calculated": ok_count, "failed": fail_count, "total": len(books)})
+
 
 @router.api_route(
     "/api/admin/pricing/recalculate",
@@ -100,7 +143,7 @@ async def admin_pricing_calculate(request: Request) -> Response:
     methods=["GET"],
 )
 async def admin_enrichment_status(request: Request) -> Response:
-    return await proxy_request("enrichment-real", "external-apis/status", request)
+    return await proxy_request("enrichment", "external-apis/status", request)
 
 
 @router.api_route(
@@ -108,7 +151,7 @@ async def admin_enrichment_status(request: Request) -> Response:
     methods=["POST"],
 )
 async def admin_enrichment_trigger(request: Request) -> Response:
-    return await proxy_request("enrichment-real", "enrich", request)
+    return await proxy_request("enrichment", "enrich", request)
 
 
 @router.api_route(
@@ -116,7 +159,7 @@ async def admin_enrichment_trigger(request: Request) -> Response:
     methods=["GET", "POST"],
 )
 async def admin_enrichment_path(path: str, request: Request) -> Response:
-    return await proxy_request("enrichment-real", f"enrich/{path}", request)
+    return await proxy_request("enrichment", f"enrich/{path}", request)
 
 
 # ─────────────────────────────────────────
