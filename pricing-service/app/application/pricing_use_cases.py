@@ -60,6 +60,7 @@ class PricingService:
         decision = PricingDecision(
             id=None,
             book_id=book_id,
+            book_title=book_title,
             condition=condition,
             base_price=base_price,
             condition_factor=condition_factor,

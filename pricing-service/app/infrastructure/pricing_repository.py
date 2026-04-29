@@ -21,6 +21,7 @@ def _decision_to_domain(model: PricingDecisionModel) -> PricingDecision:
     return PricingDecision(
         id=model.id,
         book_id=model.book_id,
+        book_title=model.book_title,
         condition=BookCondition(model.condition.value),
         base_price=model.base_price,
         condition_factor=model.condition_factor,
@@ -51,6 +52,7 @@ def save_pricing_decision(db: Session, decision: PricingDecision) -> PricingDeci
     # Save decision
     decision_model = PricingDecisionModel(
         book_id=decision.book_id,
+        book_title=decision.book_title,
         condition=decision.condition.value,
         base_price=decision.base_price,
         condition_factor=decision.condition_factor,

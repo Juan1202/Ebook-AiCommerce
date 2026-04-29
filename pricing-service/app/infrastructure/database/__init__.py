@@ -39,6 +39,7 @@ class PricingDecisionModel(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     book_id = Column(String(100), index=True, nullable=False)
+    book_title = Column(String(500), nullable=True)
     condition = Column(SAEnum(BookConditionDB), nullable=False)
     base_price = Column(Float, nullable=False)
     condition_factor = Column(Float, nullable=False)

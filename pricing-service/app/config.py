@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql://bookflow:bookflow123@pricing-db:5432/pricing_db"
     EBAY_API_URL: str = "https://api.ebay.com/buy/browse/v1/item_summary/search"
-    EBAY_APP_ID: str = "your-ebay-app-id"
+    EBAY_APP_ID: str = ""
     CACHE_TTL: int = 3600  # 1 hour
     CIRCUIT_BREAKER_FAILURE_THRESHOLD: int = 5
     CIRCUIT_BREAKER_RECOVERY_TIMEOUT: int = 60

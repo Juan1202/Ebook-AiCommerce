@@ -34,4 +34,5 @@ class PricingDecision:
     source: str  # "external" or "fallback"
     explanation: str
     created_at: datetime
+    book_title: Optional[str] = None
     references: List[PricingReference] = None

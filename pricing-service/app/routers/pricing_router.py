@@ -24,12 +24,14 @@ class CalculatePriceRequest(BaseModel):
 class PricingDecisionResponse(BaseModel):
     id: int
     book_id: str
+    title: Optional[str]
     condition: str
     base_price: float
     condition_factor: float
     suggested_price: float
     references_used: int
     source: str
+    is_fallback: bool
     explanation: str
     created_at: str
 
@@ -49,12 +51,14 @@ def list_pricing_decisions(limit: int = 100, db: Session = Depends(get_db)):
         PricingDecisionResponse(
             id=d.id,
             book_id=d.book_id,
+            title=d.book_title,
             condition=d.condition.value,
             base_price=d.base_price,
             condition_factor=d.condition_factor,
             suggested_price=d.suggested_price,
             references_used=d.references_used,
             source=d.source,
+            is_fallback=d.source == "fallback",
             explanation=d.explanation,
             created_at=d.created_at.isoformat()
         )
@@ -80,12 +84,14 @@ async def calculate_price(
         return PricingDecisionResponse(
             id=decision.id,
             book_id=decision.book_id,
+            title=decision.book_title,
             condition=decision.condition.value,
             base_price=decision.base_price,
             condition_factor=decision.condition_factor,
             suggested_price=decision.suggested_price,
             references_used=decision.references_used,
             source=decision.source,
+            is_fallback=decision.source == "fallback",
             explanation=decision.explanation,
             created_at=decision.created_at.isoformat()
         )
@@ -103,12 +109,14 @@ def get_latest_price(book_id: str, db: Session = Depends(get_db)):
     return PricingDecisionResponse(
         id=decision.id,
         book_id=decision.book_id,
+        title=decision.book_title,
         condition=decision.condition.value,
         base_price=decision.base_price,
         condition_factor=decision.condition_factor,
         suggested_price=decision.suggested_price,
         references_used=decision.references_used,
         source=decision.source,
+        is_fallback=decision.source == "fallback",
         explanation=decision.explanation,
         created_at=decision.created_at.isoformat()
     )
@@ -123,12 +131,14 @@ def get_price_history(book_id: str, db: Session = Depends(get_db)):
         PricingDecisionResponse(
             id=d.id,
             book_id=d.book_id,
+            title=d.book_title,
             condition=d.condition.value,
             base_price=d.base_price,
             condition_factor=d.condition_factor,
             suggested_price=d.suggested_price,
             references_used=d.references_used,
             source=d.source,
+            is_fallback=d.source == "fallback",
             explanation=d.explanation,
             created_at=d.created_at.isoformat()
         )
