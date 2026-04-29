@@ -163,6 +163,42 @@ async def admin_enrichment_path(path: str, request: Request) -> Response:
 
 
 # ─────────────────────────────────────────
+# SPRINT 3 — Orders routes
+# ─────────────────────────────────────────
+
+@router.api_route(
+    "/api/orders/{order_id}/confirm",
+    methods=["POST"],
+)
+async def order_confirm(order_id: int, request: Request) -> Response:
+    return await proxy_request("order", f"orders/{order_id}/confirm", request)
+
+
+@router.api_route(
+    "/api/orders/{order_id}/cancel",
+    methods=["POST"],
+)
+async def order_cancel(order_id: int, request: Request) -> Response:
+    return await proxy_request("order", f"orders/{order_id}/cancel", request)
+
+
+@router.api_route(
+    "/api/orders/{order_id}",
+    methods=["GET"],
+)
+async def order_detail(order_id: int, request: Request) -> Response:
+    return await proxy_request("order", f"orders/{order_id}", request)
+
+
+@router.api_route(
+    "/api/orders",
+    methods=["GET", "POST"],
+)
+async def orders_root(request: Request) -> Response:
+    return await proxy_request("order", "orders", request)
+
+
+# ─────────────────────────────────────────
 # GENERIC catch-all proxy
 # ─────────────────────────────────────────
 

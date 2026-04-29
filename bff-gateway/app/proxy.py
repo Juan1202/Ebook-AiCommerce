@@ -13,6 +13,7 @@ SERVICE_MAP = {
     "pricing":         os.getenv("PRICING_SERVICE_URL",    "http://pricing-service:8005"),
     "quality":         os.getenv("DATA_QUALITY_URL",       "http://data-quality-module:8007"),
     "config":          os.getenv("CONFIG_MODULE_URL",      "http://config-module:8008"),
+    "order":           os.getenv("ORDER_SERVICE_URL",      "http://order-service:8010"),
 }
 
 
