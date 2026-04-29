@@ -1,31 +1,32 @@
 import { useState } from "react";
 import styles from "./Layout.module.css";
+import DashboardPage from "../pages/DashboardPage";
+import InventarioPage from "../pages/InventarioPage";
 import ReportesPage from "../pages/ReportesPage";
 import ConfiguracionPage from "../pages/ConfiguracionPage";
 import EnrichmentPage from "../pages/EnrichmentPage";
 import PricingDashboard from "../components/pricing/PricingDashboard";
 
-interface Props {
-  children: React.ReactNode;
-}
-
-type View = "dashboard" | "precios" | "reportes" | "configuracion" | "enriquecimiento";
+type View = "dashboard" | "inventario" | "precios" | "enriquecimiento" | "reportes" | "configuracion";
 
 const NAV_ITEMS: { id: View; label: string; icon: string }[] = [
-  { id: "dashboard", label: "Dashboard", icon: "📊" },
-  { id: "precios", label: "Precios", icon: "💰" },
+  { id: "dashboard",      label: "Dashboard",       icon: "📊" },
+  { id: "inventario",     label: "Inventario",      icon: "⊞" },
+  { id: "precios",        label: "Precios IA",      icon: "💰" },
   { id: "enriquecimiento", label: "Enriquecimiento", icon: "📂" },
-  { id: "reportes", label: "Reportes", icon: "📈" },
-  { id: "configuracion", label: "Configuración", icon: "⚙️" },
+  { id: "reportes",       label: "Reportes",        icon: "📈" },
+  { id: "configuracion",  label: "Configuración",   icon: "⚙️" },
 ];
 
-const Layout = ({ children }: Props) => {
+const Layout = () => {
   const [view, setView] = useState<View>("dashboard");
 
   const renderContent = () => {
     switch (view) {
       case "dashboard":
-        return children;
+        return <DashboardPage onNavegar={(v) => setView(v as View)} />;
+      case "inventario":
+        return <InventarioPage />;
       case "precios":
         return <PricingDashboard />;
       case "enriquecimiento":

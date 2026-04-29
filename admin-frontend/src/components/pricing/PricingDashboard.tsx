@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import PricingCard from "./PricingCard";
 import PricingFilters from "./PricingFilters";
-import { getPricingList } from "../../services/pricingService";
+import { getPricingList, bulkCalculate } from "../../services/pricingService";
 import styles from "./PricingDashboard.module.css";
 
 interface PricingItem {
   book_id: string;
   title: string;
+  condition: string;
   price: number;
   isFallback: boolean;
 }
@@ -14,6 +15,7 @@ interface PricingItem {
 const PricingDashboard = () => {
   const [data, setData] = useState<PricingItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [calculating, setCalculating] = useState(false);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("all");
 
@@ -24,7 +26,8 @@ const PricingDashboard = () => {
       const res = await getPricingList();
       const items: PricingItem[] = (res.items || res || []).map((item: Record<string, unknown>) => ({
         book_id: String(item.book_id ?? item.id ?? ""),
-        title: String(item.title ?? "Sin título"),
+        title: String(item.title ?? item.book_id ?? "Sin título"),
+        condition: String(item.condition ?? "BUENO"),
         price: Number(item.suggested_price ?? item.price ?? 0),
         isFallback: Boolean(item.is_fallback ?? item.isFallback ?? false),
       }));
@@ -34,6 +37,19 @@ const PricingDashboard = () => {
       setData([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBulkCalculate = async () => {
+    setCalculating(true);
+    setError("");
+    try {
+      await bulkCalculate();
+      await load();
+    } catch {
+      setError("Error al calcular precios del catálogo.");
+    } finally {
+      setCalculating(false);
     }
   };
 
@@ -58,9 +74,18 @@ const PricingDashboard = () => {
           <h1 className={styles.pageTitle}>Panel de Precios</h1>
           <p className={styles.pageSubtitle}>Motor de pricing inteligente con trazabilidad completa</p>
         </div>
-        <button className={styles.refreshBtn} onClick={load} disabled={loading}>
-          {loading ? "Cargando…" : "↻ Actualizar"}
-        </button>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <button
+            className={styles.refreshBtn}
+            onClick={handleBulkCalculate}
+            disabled={calculating || loading}
+          >
+            {calculating ? "Calculando…" : "⚡ Calcular catálogo"}
+          </button>
+          <button className={styles.refreshBtn} onClick={load} disabled={loading || calculating}>
+            {loading ? "Cargando…" : "↻ Actualizar"}
+          </button>
+        </div>
       </div>
 
       <div className={styles.kpiRow}>
@@ -99,7 +124,21 @@ const PricingDashboard = () => {
 
       {!loading && !error && filtered.length === 0 && (
         <div className={styles.stateWrap}>
-          <p className={styles.stateText}>No hay libros con los filtros seleccionados.</p>
+          <p className={styles.stateText}>
+            {data.length === 0
+              ? "Aún no hay precios calculados. Usa ⚡ Calcular catálogo para iniciar."
+              : "No hay libros con los filtros seleccionados."}
+          </p>
+          {data.length === 0 && (
+            <button
+              className={styles.refreshBtn}
+              onClick={handleBulkCalculate}
+              disabled={calculating}
+              style={{ marginTop: "1rem" }}
+            >
+              {calculating ? "Calculando…" : "⚡ Calcular catálogo"}
+            </button>
+          )}
         </div>
       )}
 

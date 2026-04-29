@@ -27,8 +27,8 @@ const PricingCard = ({ data }: Props) => {
     let newPrice;
 
     try {
-      const res = await recalculatePrice(data.book_id);
-      newPrice = res.price;
+      const res = await recalculatePrice(data.book_id, data.title, data.condition ?? "BUENO");
+      newPrice = res.suggested_price ?? res.price;
     } catch {
       const min = Number(localStorage.getItem("minPrice") || 40000);
       const max = Number(localStorage.getItem("maxPrice") || 80000);

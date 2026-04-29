@@ -1,6 +1,7 @@
 import axios from "axios";
 
 const API = "http://localhost:8009/api/admin/pricing";
+const BFF = "http://localhost:8009/api/admin";
 
 // 🔹 Obtener lista de libros con precios
 export const getPricingList = async () => {
@@ -8,9 +9,19 @@ export const getPricingList = async () => {
   return res.data;
 };
 
-// 🔹 Recalcular precio
-export const recalculatePrice = async (book_id: string) => {
-  const res = await axios.post(`${API}/calculate`, { book_id });
+// 🔹 Calcular precio de todos los libros del catálogo
+export const bulkCalculate = async () => {
+  const res = await axios.post(`${BFF}/pricing/bulk-calculate`);
+  return res.data;
+};
+
+// 🔹 Recalcular precio de un libro
+export const recalculatePrice = async (
+  book_id: string,
+  book_title: string,
+  condition: string,
+) => {
+  const res = await axios.post(`${API}/calculate`, { book_id, book_title, condition });
   return res.data;
 };
 
