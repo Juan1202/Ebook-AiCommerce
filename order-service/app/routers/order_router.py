@@ -15,9 +15,11 @@ from app.application.use_cases.confirm_order import (ConfirmOrderUseCase,
 from app.application.use_cases.create_order import (BookNotFoundError,
                                                     CreateOrderUseCase,
                                                     MissingPriceError)
+from app.application.use_cases.fulfill_order import FulfillOrderUseCase
 from app.dependencies import (get_cancel_order_use_case,
                               get_confirm_order_use_case,
                               get_create_order_use_case,
+                              get_fulfill_order_use_case,
                               get_order_repository)
 from app.domain.entities.order import IllegalStateTransitionError, Order
 from app.infrastructure.clients.errors import UpstreamServiceError
@@ -57,10 +59,10 @@ class OrderResponse(BaseModel):
     items: list[OrderItemResponse]
     total_amount: float
     created_at: datetime
-    confirmed_at: Optional[datetime]
-    cancelled_at: Optional[datetime]
-    fulfilled_at: Optional[datetime]
-    cancel_reason: Optional[str]
+    confirmed_at: Optional[datetime] = None
+    cancelled_at: Optional[datetime] = None
+    fulfilled_at: Optional[datetime] = None
+    cancel_reason: Optional[str] = None
 
 
 def _to_response(order: Order) -> OrderResponse:
@@ -143,6 +145,20 @@ async def confirm_order(
         ) from exc
     except UpstreamServiceError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return _to_response(order)
+
+
+@router.post("/{order_id}/fulfill", response_model=OrderResponse)
+def fulfill_order(
+    order_id: int,
+    use_case: FulfillOrderUseCase = Depends(get_fulfill_order_use_case),
+) -> OrderResponse:
+    try:
+        order = use_case.execute(order_id)
+    except OrderNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except IllegalStateTransitionError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     return _to_response(order)
 
 

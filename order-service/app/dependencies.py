@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.application.use_cases.cancel_order import CancelOrderUseCase
 from app.application.use_cases.confirm_order import ConfirmOrderUseCase
 from app.application.use_cases.create_order import CreateOrderUseCase
+from app.application.use_cases.fulfill_order import FulfillOrderUseCase
 from app.config import settings
 from app.infrastructure.clients.catalog_client import HttpCatalogClient
 from app.infrastructure.clients.inventory_client import HttpInventoryClient
@@ -50,3 +51,9 @@ def get_cancel_order_use_case(
     repo: SqlAlchemyOrderRepository = Depends(get_order_repository),
 ) -> CancelOrderUseCase:
     return CancelOrderUseCase(repo)
+
+
+def get_fulfill_order_use_case(
+    repo: SqlAlchemyOrderRepository = Depends(get_order_repository),
+) -> FulfillOrderUseCase:
+    return FulfillOrderUseCase(repo)

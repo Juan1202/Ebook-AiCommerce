@@ -183,6 +183,14 @@ async def order_cancel(order_id: int, request: Request) -> Response:
 
 
 @router.api_route(
+    "/api/orders/{order_id}/fulfill",
+    methods=["POST"],
+)
+async def order_fulfill(order_id: int, request: Request) -> Response:
+    return await proxy_request("order", f"orders/{order_id}/fulfill", request)
+
+
+@router.api_route(
     "/api/orders/{order_id}",
     methods=["GET"],
 )
