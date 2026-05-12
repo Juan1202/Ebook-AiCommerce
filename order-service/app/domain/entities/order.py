@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional
 
@@ -35,6 +35,7 @@ class OrderItem:
     book_title: str
     quantity: int
     unit_price: float
+    book_reference: Optional[str] = None
 
     def __post_init__(self) -> None:
         if self.quantity <= 0:
@@ -53,7 +54,7 @@ class Order:
     items: tuple[OrderItem, ...]
     status: OrderStatus = OrderStatus.PENDING
     id: Optional[int] = None
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     confirmed_at: Optional[datetime] = None
     cancelled_at: Optional[datetime] = None
     fulfilled_at: Optional[datetime] = None
@@ -80,7 +81,7 @@ class Order:
             raise IllegalStateTransitionError(
                 f"Cannot transition order from {self.status.value} to {target.value}"
             )
-        timestamp = now or datetime.utcnow()
+        timestamp = now or datetime.now(timezone.utc)
         if target is OrderStatus.CONFIRMED:
             return replace(self, status=target, confirmed_at=timestamp)
         if target is OrderStatus.CANCELLED:

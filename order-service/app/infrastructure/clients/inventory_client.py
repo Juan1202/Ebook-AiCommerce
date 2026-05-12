@@ -18,7 +18,7 @@ class HttpInventoryClient(InventoryClient):
         self._client = client
 
     async def get_stock(self, book_id: str) -> StockLevel:
-        url = f"{self._base_url}/inventory/{book_id}"
+        url = f"{self._base_url}/inventory/availability/{book_id}"
         try:
             if self._client is not None:
                 response = await self._client.get(url, timeout=self._timeout)
@@ -42,5 +42,29 @@ class HttpInventoryClient(InventoryClient):
             )
 
         payload = response.json()
-        available = int(payload.get("stock") or payload.get("quantity") or payload.get("available") or 0)
-        return StockLevel(book_id=str(payload.get("book_id", book_id)), available=available)
+        available = int(
+            payload.get("quantity_available")
+            or payload.get("stock")
+            or payload.get("quantity")
+            or 0
+        )
+        return StockLevel(book_id=str(payload.get("book_reference", book_id)), available=available)
+
+    async def reserve_stock(self, book_id: str, quantity: int) -> None:
+        url = f"{self._base_url}/inventory/availability/{book_id}/reserve"
+        try:
+            if self._client is not None:
+                response = await self._client.patch(url, json={"quantity": quantity}, timeout=self._timeout)
+            else:
+                async with httpx.AsyncClient(timeout=self._timeout) as client:
+                    response = await client.patch(url, json={"quantity": quantity})
+        except (httpx.ConnectError, httpx.TimeoutException) as exc:
+            logger.error("inventory-service unreachable during reserve: %s", exc)
+            raise UpstreamServiceError("inventory-service", str(exc)) from exc
+
+        if response.status_code == 409:
+            raise UpstreamServiceError("inventory-service", "Insufficient stock during reservation")
+        if response.status_code >= 400:
+            raise UpstreamServiceError(
+                "inventory-service", f"reserve failed HTTP {response.status_code}: {response.text[:200]}"
+            )

@@ -9,9 +9,10 @@ from sqlalchemy.orm import sessionmaker, relationship
 
 from app.config import settings
 
+Base = declarative_base()
+
 engine = create_engine(settings.DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
 
 
 class BookConditionDB(str, enum.Enum):
@@ -30,7 +31,7 @@ class PricingReferenceModel(Base):
     source = Column(String(50), nullable=False)
     price = Column(Float, nullable=False)
     currency = Column(String(3), default="USD", nullable=False)
-    observed_at = Column(DateTime, default=datetime.datetime.utcnow)
+    observed_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
     extra_data = Column(JSON, default=dict)
 
 
@@ -47,7 +48,7 @@ class PricingDecisionModel(Base):
     references_used = Column(Integer, nullable=False)
     source = Column(String(50), nullable=False)
     explanation = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
 
     references = relationship("PricingReferenceModel", backref="decision")
 

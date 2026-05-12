@@ -11,7 +11,8 @@ class StockLevel:
 
 
 class InventoryClient(Protocol):
-    """Port for stock availability checks. Implementation calls
+    """Port for stock availability checks and reservation. Implementation calls
     inventory-service over REST."""
 
     async def get_stock(self, book_id: str) -> StockLevel: ...
+    async def reserve_stock(self, book_id: str, quantity: int) -> None: ...

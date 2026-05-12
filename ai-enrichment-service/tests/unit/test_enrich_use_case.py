@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from app.application.use_cases.enrich_book import EnrichBookUseCase
 from app.domain.entities.enrichment import (BookMetadata, EnrichmentSource,
                                               EnrichmentStatus, EnrichmentRequest)
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 @pytest.fixture
@@ -14,7 +14,7 @@ def mock_repo():
         id=1, book_id="book-1", isbn="9780141439518",
         title="Great Expectations", author="Dickens, Charles",
         publisher=None, status=EnrichmentStatus.pending,
-        requested_at=datetime.utcnow(),
+        requested_at=datetime.now(timezone.utc),
     )
     repo.save_result.return_value = MagicMock(id=1, request_id=1)
     return repo

@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import List, Optional
@@ -10,6 +10,24 @@ class ItemCondition(str, Enum):
     GOOD = "good"
     ACCEPTABLE = "acceptable"
     POOR = "poor"
+
+
+class DefectType(str, Enum):
+    TORN_PAGES = "torn_pages"
+    WATER_DAMAGE = "water_damage"
+    WRITING = "writing"
+    HIGHLIGHTING = "highlighting"
+    COVER_DAMAGE = "cover_damage"
+    MISSING_PAGES = "missing_pages"
+    SPINE_DAMAGE = "spine_damage"
+    STAINS = "stains"
+    OTHER = "other"
+
+
+@dataclass(frozen=True)
+class Defect:
+    type: DefectType
+    description: Optional[str] = None
 
 
 class BatchStatus(str, Enum):
@@ -25,15 +43,15 @@ class InventoryItem:
     external_code: Optional[str]
     book_reference: str
     title: str
-    author: str
     isbn: Optional[str]
     quantity_available: int
     quantity_reserved: int
     condition: ItemCondition
-    defects: Optional[str]
-    observations: Optional[str]
-    import_batch_id: Optional[int]
-    created_at: Optional[datetime]
+    author: str = ""
+    defects: List[Defect] = field(default_factory=list)
+    observations: Optional[str] = None
+    import_batch_id: Optional[int] = None
+    created_at: Optional[datetime] = None
 
     def is_available(self) -> bool:
         return self.quantity_available > 0
@@ -44,8 +62,6 @@ class InventoryItem:
             errors.append("book_reference es requerido")
         if not self.title or not self.title.strip():
             errors.append("title es requerido")
-        if not self.author or not self.author.strip():
-            errors.append("author es requerido")
         if self.quantity_available < 0:
             errors.append("quantity_available no puede ser negativo")
         return errors

@@ -1,5 +1,10 @@
+import asyncio
 import time
-from typing import Optional
+from typing import Awaitable, Callable, Optional, TypeVar
+
+import httpx
+
+_T = TypeVar("_T")
 
 
 class CircuitBreaker:
@@ -53,3 +58,33 @@ class SimpleCache:
 
     def set(self, key: str, value) -> None:
         self._store[key] = (value, time.time() + self._ttl)
+
+
+_RETRYABLE_STATUS = frozenset({429, 500, 502, 503, 504})
+
+
+async def fetch_with_retry(
+    coro_factory: Callable[[], Awaitable[_T]],
+    max_attempts: int = 3,
+    base_delay: float = 1.0,
+) -> _T:
+    """Call *coro_factory* up to *max_attempts* times with exponential backoff.
+
+    Retries on transient network errors and 5xx / 429 HTTP responses.
+    Re-raises immediately on non-retryable HTTP errors (4xx except 429).
+    """
+    last_exc: BaseException = RuntimeError("fetch_with_retry: no attempts")
+    for attempt in range(max_attempts):
+        try:
+            return await coro_factory()
+        except (httpx.ConnectError, httpx.TimeoutException, httpx.NetworkError) as exc:
+            last_exc = exc
+            if attempt < max_attempts - 1:
+                await asyncio.sleep(base_delay * (2 ** attempt))
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code in _RETRYABLE_STATUS and attempt < max_attempts - 1:
+                last_exc = exc
+                await asyncio.sleep(base_delay * (2 ** attempt))
+            else:
+                raise
+    raise last_exc

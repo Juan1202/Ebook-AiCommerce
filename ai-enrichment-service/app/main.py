@@ -1,6 +1,11 @@
-from fastapi import FastAPI
+import logging
 
-from app.infrastructure.database.connection import Base, engine
+from fastapi import FastAPI
+from sqlalchemy import text
+
+from app.infrastructure.database.connection import Base, engine, SessionLocal
+
+logger = logging.getLogger(__name__)
 from app.infrastructure.database.models import EnrichmentRequestModel, EnrichmentResultModel  # noqa: F401 — registers models
 from app.routers.enrichment_router import router as enrichment_router
 from app.routers.upload_router import router as upload_router
@@ -19,4 +24,13 @@ app.include_router(upload_router)
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": "ai-enrichment-service"}
+    db_status = "disconnected"
+    db = SessionLocal()
+    try:
+        db.execute(text("SELECT 1"))
+        db_status = "connected"
+    except Exception as exc:
+        logger.warning("Health check DB probe failed: %s", exc)
+    finally:
+        db.close()
+    return {"status": "ok", "service": "ai-enrichment-service", "version": "2.5.0", "db": db_status}

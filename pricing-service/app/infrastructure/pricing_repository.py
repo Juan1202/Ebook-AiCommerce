@@ -62,8 +62,12 @@ def save_pricing_decision(db: Session, decision: PricingDecision) -> PricingDeci
         explanation=decision.explanation
     )
     db.add(decision_model)
-    db.commit()
-    db.refresh(decision_model)
+    try:
+        db.commit()
+        db.refresh(decision_model)
+    except Exception:
+        db.rollback()
+        raise
     return _decision_to_domain(decision_model)
 
 

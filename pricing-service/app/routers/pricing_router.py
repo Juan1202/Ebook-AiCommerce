@@ -36,6 +36,11 @@ class PricingDecisionResponse(BaseModel):
     created_at: str
 
 
+class PriceOverrideRequest(BaseModel):
+    suggested_price: float
+    reason: str = "manual override"
+
+
 class APIStatusResponse(BaseModel):
     source: str
     available: bool
@@ -99,6 +104,23 @@ async def calculate_price(
         raise HTTPException(status_code=500, detail=f"Error calculating price: {str(e)}")
 
 
+@router.get("/explanation/{decision_id}")
+def get_decision_explanation(decision_id: int, db: Session = Depends(get_db)):
+    """Get explanation for a specific pricing decision"""
+    explanation = pricing_service.get_decision_explanation(db, decision_id)
+    if not explanation:
+        raise HTTPException(status_code=404, detail="Decision not found")
+
+    return {"decision_id": decision_id, "explanation": explanation}
+
+
+@router.get("/external-apis/status", response_model=APIStatusResponse)
+def get_external_api_status():
+    """Get status of external APIs"""
+    status = pricing_service.get_external_api_status()
+    return APIStatusResponse(**status)
+
+
 @router.get("/{book_id}", response_model=PricingDecisionResponse)
 def get_latest_price(book_id: str, db: Session = Depends(get_db)):
     """Get the latest pricing decision for a book"""
@@ -122,7 +144,52 @@ def get_latest_price(book_id: str, db: Session = Depends(get_db)):
     )
 
 
-@router.get("/history/{book_id}", response_model=List[PricingDecisionResponse])
+@router.post("/{book_id}/override", response_model=PricingDecisionResponse)
+def override_price(
+    book_id: str,
+    body: PriceOverrideRequest,
+    db: Session = Depends(get_db),
+):
+    """Persist a manual price override as a new pricing decision."""
+    from datetime import datetime, timezone
+    from app.infrastructure.database import PricingDecisionModel, BookConditionDB
+
+    decision_model = PricingDecisionModel(
+        book_id=book_id,
+        book_title=None,
+        condition=BookConditionDB.BUENO,
+        base_price=body.suggested_price,
+        condition_factor=1.0,
+        suggested_price=body.suggested_price,
+        references_used=0,
+        source="manual",
+        explanation=body.reason,
+    )
+    db.add(decision_model)
+    try:
+        db.commit()
+        db.refresh(decision_model)
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error saving override: {exc}")
+
+    return PricingDecisionResponse(
+        id=decision_model.id,
+        book_id=decision_model.book_id,
+        title=decision_model.book_title,
+        condition=decision_model.condition.value,
+        base_price=decision_model.base_price,
+        condition_factor=decision_model.condition_factor,
+        suggested_price=decision_model.suggested_price,
+        references_used=decision_model.references_used,
+        source=decision_model.source,
+        is_fallback=False,
+        explanation=decision_model.explanation,
+        created_at=decision_model.created_at.isoformat(),
+    )
+
+
+@router.get("/{book_id}/history", response_model=List[PricingDecisionResponse])
 def get_price_history(book_id: str, db: Session = Depends(get_db)):
     """Get pricing history for a book"""
     decisions = pricing_service.get_price_history(db, book_id)
@@ -144,20 +211,3 @@ def get_price_history(book_id: str, db: Session = Depends(get_db)):
         )
         for d in decisions
     ]
-
-
-@router.get("/explanation/{decision_id}")
-def get_decision_explanation(decision_id: int, db: Session = Depends(get_db)):
-    """Get explanation for a specific pricing decision"""
-    explanation = pricing_service.get_decision_explanation(db, decision_id)
-    if not explanation:
-        raise HTTPException(status_code=404, detail="Decision not found")
-
-    return {"decision_id": decision_id, "explanation": explanation}
-
-
-@router.get("/external-apis/status", response_model=APIStatusResponse)
-def get_external_api_status():
-    """Get status of external APIs"""
-    status = pricing_service.get_external_api_status()
-    return APIStatusResponse(**status)

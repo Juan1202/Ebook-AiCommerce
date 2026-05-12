@@ -8,7 +8,22 @@ from app.domain.inventory_item import (
 )
 from app.infrastructure import inventory_repository
 
-REQUIRED_COLUMNS = {"title", "author", "book_reference", "quantity_available"}
+REQUIRED_COLUMNS = {"title", "book_reference", "quantity_available"}
+
+# Mapeo de cabeceras en español (Dataset_Bookflow) a nombres internos
+_COLUMN_ALIASES: dict[str, str] = {
+    "título_del_libro": "title",
+    "titulo_del_libro": "title",
+    "isbn_13": "book_reference",
+    "isbn_10": "external_code",
+    "estado_del_libro": "condition",
+    "caracteristicas": "defects",
+    "comentarios_opcionales": "observations",
+    "unidades_disponibles": "quantity_available",
+    "ubicación_física_en_bodega": "location",
+    "ubicacion_fisica_en_bodega": "location",
+    "url_portada": "cover_url",
+}
 
 
 def process_inventory_file(db: Session, file_name: str,
@@ -19,7 +34,14 @@ def process_inventory_file(db: Session, file_name: str,
         if extension in ("xlsx", "xls"):
             df = pd.read_excel(io.BytesIO(content))
         elif extension == "csv":
-            df = pd.read_csv(io.StringIO(content.decode("utf-8", errors="replace")))
+            for enc in ("utf-8-sig", "utf-8", "latin-1", "cp1252"):
+                try:
+                    df = pd.read_csv(io.StringIO(content.decode(enc)))
+                    break
+                except UnicodeDecodeError:
+                    continue
+            else:
+                df = pd.read_csv(io.StringIO(content.decode("utf-8", errors="replace")))
         else:
             inventory_repository.update_batch(db, batch.id, 0, 0, 0, "failed")
             raise ValueError(f"Formato no soportado: {extension}")
@@ -28,6 +50,7 @@ def process_inventory_file(db: Session, file_name: str,
         raise
 
     df.columns = [c.strip().lower().replace(" ", "_") for c in df.columns]
+    df.rename(columns=_COLUMN_ALIASES, inplace=True)
     missing = REQUIRED_COLUMNS - set(df.columns)
     if missing:
         inventory_repository.update_batch(db, batch.id, 0, 0, 0, "failed")
@@ -51,17 +74,21 @@ def process_inventory_file(db: Session, file_name: str,
         except ValueError:
             condition = ItemCondition.GOOD
 
+        book_ref = str(row.get("book_reference", "")).strip()
+        if not book_ref:
+            book_ref = str(row.get("external_code", "")).strip()
+
         item = InventoryItem(
             id=None,
             external_code=str(row.get("external_code", "")).strip() or None,
-            book_reference=str(row.get("book_reference", "")).strip(),
+            book_reference=book_ref,
             title=str(row.get("title", "")).strip(),
-            author=str(row.get("author", "")).strip(),
-            isbn=str(row.get("isbn", "")).strip() or None,
+            isbn=str(row.get("isbn", book_ref)).strip() or None,
             quantity_available=qty,
             quantity_reserved=0,
             condition=condition,
-            defects=str(row.get("defects", "")).strip() or None,
+            author=str(row.get("author", "")).strip() or "",
+            defects=[],
             observations=str(row.get("observations", "")).strip() or None,
             import_batch_id=batch.id,
             created_at=None,
@@ -109,3 +136,7 @@ def get_batch_items(db: Session, batch_id: int):
 
 def check_availability(db: Session, book_reference: str) -> int:
     return inventory_repository.check_availability(db, book_reference)
+
+
+def reserve_stock(db: Session, book_reference: str, quantity: int) -> bool:
+    return inventory_repository.reserve_stock(db, book_reference, quantity)

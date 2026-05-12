@@ -16,6 +16,7 @@ def _model_to_domain(model: OrderModel) -> Order:
             book_title=item.book_title,
             quantity=item.quantity,
             unit_price=float(item.unit_price),
+            book_reference=item.book_reference,
         )
         for item in model.items
     )
@@ -47,14 +48,19 @@ class SqlAlchemyOrderRepository(OrderRepository):
             model.items.append(
                 OrderItemModel(
                     book_id=item.book_id,
+                    book_reference=item.book_reference,
                     book_title=item.book_title,
                     quantity=item.quantity,
                     unit_price=item.unit_price,
                 )
             )
         self._db.add(model)
-        self._db.commit()
-        self._db.refresh(model)
+        try:
+            self._db.commit()
+            self._db.refresh(model)
+        except Exception:
+            self._db.rollback()
+            raise
         return _model_to_domain(model)
 
     def get_by_id(self, order_id: int) -> Optional[Order]:
@@ -74,6 +80,16 @@ class SqlAlchemyOrderRepository(OrderRepository):
         )
         return [_model_to_domain(m) for m in models]
 
+    def list_all(self, limit: int = 50, offset: int = 0) -> list[Order]:
+        models = (
+            self._db.query(OrderModel)
+            .order_by(OrderModel.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
+        return [_model_to_domain(m) for m in models]
+
     def update(self, order: Order) -> Order:
         if order.id is None:
             raise ValueError("Cannot update an order without an id")
@@ -86,6 +102,10 @@ class SqlAlchemyOrderRepository(OrderRepository):
         model.cancelled_at = order.cancelled_at
         model.fulfilled_at = order.fulfilled_at
         model.cancel_reason = order.cancel_reason
-        self._db.commit()
-        self._db.refresh(model)
+        try:
+            self._db.commit()
+            self._db.refresh(model)
+        except Exception:
+            self._db.rollback()
+            raise
         return _model_to_domain(model)

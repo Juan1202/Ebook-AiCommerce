@@ -74,10 +74,14 @@ class FakeInventoryClient:
     def __init__(self, stock: dict[str, int]) -> None:
         self._stock = stock
         self.calls: list[str] = []
+        self.reservations: list[tuple[str, int]] = []
 
     async def get_stock(self, book_id: str) -> StockLevel:
         self.calls.append(book_id)
         return StockLevel(book_id=book_id, available=self._stock.get(book_id, 0))
+
+    async def reserve_stock(self, book_id: str, quantity: int) -> None:
+        self.reservations.append((book_id, quantity))
 
 
 # ─── CreateOrderUseCase ───────────────────────────────────────────────

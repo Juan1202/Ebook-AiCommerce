@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.application.use_cases.confirm_order import OrderNotFoundError
+from app.application.errors import OrderNotFoundError
 from app.domain.entities.order import Order, OrderStatus
 from app.domain.interfaces.order_repository import OrderRepository
 

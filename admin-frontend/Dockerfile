@@ -1,8 +1,7 @@
-FROM node:18-alpine
+FROM node:20-alpine
 WORKDIR /app
-COPY package*.json ./
+COPY package.json ./
 RUN npm install
 COPY . .
 EXPOSE 3001
-ENV PORT=3001
-CMD ["npm", "start"]
+CMD ["npx", "vite", "--host", "0.0.0.0", "--port", "3001"]

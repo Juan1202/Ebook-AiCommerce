@@ -5,7 +5,7 @@ import httpx
 
 from app.config import settings
 from app.domain.entities.enrichment import BookMetadata, EnrichmentSource
-from app.infrastructure.adapters.base_adapter import CircuitBreaker, SimpleCache
+from app.infrastructure.adapters.base_adapter import CircuitBreaker, SimpleCache, fetch_with_retry
 
 logger = logging.getLogger(__name__)
 
@@ -27,13 +27,15 @@ async def search_by_isbn(isbn: str) -> Optional[BookMetadata]:
         return cached
 
     try:
+        params = {"q": f"isbn:{isbn}"}
+        if settings.GOOGLE_BOOKS_API_KEY:
+            params["key"] = settings.GOOGLE_BOOKS_API_KEY
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-            params = {"q": f"isbn:{isbn}"}
-            if settings.GOOGLE_BOOKS_API_KEY:
-                params["key"] = settings.GOOGLE_BOOKS_API_KEY
-            response = await client.get(BASE_URL, params=params)
-            response.raise_for_status()
-            data = response.json()
+            async def _call() -> dict:
+                r = await client.get(BASE_URL, params=params)
+                r.raise_for_status()
+                return r.json()
+            data = await fetch_with_retry(_call)
 
         items = data.get("items", [])
         if not items:
@@ -61,16 +63,18 @@ async def search_by_title_author(title: str, author: str) -> list[BookMetadata]:
         return cached
 
     try:
+        query = f"intitle:{title}"
+        if author:
+            query += f"+inauthor:{author}"
+        params = {"q": query, "maxResults": 5}
+        if settings.GOOGLE_BOOKS_API_KEY:
+            params["key"] = settings.GOOGLE_BOOKS_API_KEY
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-            query = f"intitle:{title}"
-            if author:
-                query += f"+inauthor:{author}"
-            params = {"q": query, "maxResults": 5}
-            if settings.GOOGLE_BOOKS_API_KEY:
-                params["key"] = settings.GOOGLE_BOOKS_API_KEY
-            response = await client.get(BASE_URL, params=params)
-            response.raise_for_status()
-            data = response.json()
+            async def _call() -> dict:
+                r = await client.get(BASE_URL, params=params)
+                r.raise_for_status()
+                return r.json()
+            data = await fetch_with_retry(_call)
 
         results = [_parse_volume(item) for item in data.get("items", [])]
         _cache.set(cache_key, results)

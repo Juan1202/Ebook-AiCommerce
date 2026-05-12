@@ -5,7 +5,7 @@ import httpx
 
 from app.config import settings
 from app.domain.entities.enrichment import BookMetadata, EnrichmentSource
-from app.infrastructure.adapters.base_adapter import CircuitBreaker, SimpleCache
+from app.infrastructure.adapters.base_adapter import CircuitBreaker, SimpleCache, fetch_with_retry
 
 logger = logging.getLogger(__name__)
 
@@ -26,14 +26,13 @@ async def search_works(query: str) -> list[BookMetadata]:
 
     try:
         url = f"{settings.CROSSREF_BASE_URL}/works"
+        params = {"query": query, "rows": 5, "select": "title,author,publisher,published-print,ISBN"}
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-            response = await client.get(url, params={
-                "query": query,
-                "rows": 5,
-                "select": "title,author,publisher,published-print,ISBN",
-            })
-            response.raise_for_status()
-            data = response.json()
+            async def _call() -> dict:
+                r = await client.get(url, params=params)
+                r.raise_for_status()
+                return r.json()
+            data = await fetch_with_retry(_call)
 
         items = data.get("message", {}).get("items", [])
         results = [_parse_work(item) for item in items]

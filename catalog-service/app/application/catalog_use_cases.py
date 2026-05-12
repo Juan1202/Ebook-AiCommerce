@@ -54,8 +54,14 @@ def publish_book(db: Session, book_id: int) -> Optional[Book]:
     return catalog_repository.update_book(db, book_id, published_flag=True)
 
 
+def mark_enriched(db: Session, book_id: int) -> Optional[Book]:
+    book = catalog_repository.get_book(db, book_id)
+    if not book:
+        return None
+    return catalog_repository.update_book(db, book_id, enriched_flag=True)
+
+
 def list_categories(db: Session) -> List[Category]:
-    catalog_repository.seed_categories(db)
     return catalog_repository.get_all_categories(db)
 
 

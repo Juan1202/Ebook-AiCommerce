@@ -56,6 +56,9 @@ def client() -> Iterator[TestClient]:
         async def get_stock(self, book_id: str) -> StockLevel:
             return StockLevel(book_id=book_id, available=self.stock.get(book_id, 0))
 
+        async def reserve_stock(self, book_id: str, quantity: int) -> None:
+            pass
+
     inventory_fake = FakeInventory()
 
     from app import dependencies as deps

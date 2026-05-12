@@ -1,60 +1,96 @@
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
+import { Search, ShoppingCart, User, Truck, ShieldCheck, Sparkles } from 'lucide-react'
 import Catalogo from './pages/Catalogo'
 import BookDetail from './components/BookDetail'
-import Cart from './components/Cart'
-import { getCartCount } from './cart'
+import IAPicks from './pages/IAPicks'
+import CartDrawer from './cart/CartDrawer'
+import FloatingChat from './components/FloatingChat'
+import LoginModal from './auth/LoginModal'
+import { Wordmark } from './components/ui'
+import { useCartStore } from './cart/cart.store'
+import { useAuthStore } from './auth/authStore'
 import './index.css'
 
-function Header({ searchQuery, onSearchChange }) {
-  const [count, setCount] = useState(getCartCount())
+function Header({ onSearchChange, onOpenCart, onOpenLogin }) {
+  const [localSearch, setLocalSearch] = useState('')
+  const items = useCartStore((state) => state.items) || []
 
   useEffect(() => {
-    const update = () => setCount(getCartCount())
-    globalThis.addEventListener('cart-updated', update)
-    globalThis.addEventListener('storage', update)
-    return () => {
-      globalThis.removeEventListener('cart-updated', update)
-      globalThis.removeEventListener('storage', update)
-    }
-  }, [])
+    const timer = setTimeout(() => onSearchChange(localSearch), 500)
+    return () => clearTimeout(timer)
+  }, [localSearch, onSearchChange])
+  const count = items.reduce((sum, item) => sum + item.quantity, 0)
+  const { user, logout } = useAuthStore()
 
   return (
     <header className="store-header">
+      <div className="header-utility-bar">
+        <span className="header-utility-item">
+          <Truck size={12} />
+          Envío gratis en pedidos +$50
+        </span>
+        <span className="header-utility-item">
+          <ShieldCheck size={12} />
+          Pago seguro garantizado
+        </span>
+        <span className="header-utility-item">
+          <Sparkles size={12} />
+          Recomendaciones con IA
+        </span>
+      </div>
+
       <div className="header-inner">
         <Link to="/" className="header-logo">
-          <div className="logo-icon">📚</div>
-          <div>
-            <div className="logo-text">BookFlow</div>
-            <div className="logo-tagline">Tu librería</div>
-          </div>
+          <Wordmark />
         </Link>
 
+        <nav className="header-nav">
+          <Link to="/" className="nav-link">Catálogo</Link>
+          <Link to="/ia-picks" className="nav-link nav-link-ai">
+            <Sparkles size={13} />
+            IA Picks
+          </Link>
+        </nav>
+
         <div className="search-wrap">
-          <span className="search-icon">🔍</span>
+          <span className="search-icon"><Search size={15} /></span>
           <input
             className="search-input"
             type="text"
             placeholder="Buscar por título, autor, ISBN…"
-            value={searchQuery}
-            onChange={e => onSearchChange(e.target.value)}
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
           />
         </div>
 
         <div className="header-actions">
-          <a
-            href="http://localhost:3001"
-            target="_blank"
-            rel="noreferrer"
-            className="header-admin-btn"
-          >
-            Panel Admin →
-          </a>
+          {user?.role === 'admin' && (
+            <a
+              href="http://localhost:3001"
+              target="_blank"
+              rel="noreferrer"
+              className="header-admin-btn"
+            >
+              Panel Admin →
+            </a>
+          )}
 
-          <Link to="/carrito" className="cart-btn">
-            🛒
+          {user ? (
+            <div className="user-menu">
+              <span className="user-greeting"><User size={14} /> {user.username}</span>
+              <button onClick={logout} className="logout-btn">Salir</button>
+            </div>
+          ) : (
+            <button onClick={onOpenLogin} className="login-btn">
+              Iniciar sesión
+            </button>
+          )}
+
+          <button onClick={onOpenCart} className="cart-btn" aria-label="Carrito">
+            <ShoppingCart size={19} />
             {count > 0 && <span className="cart-badge">{count}</span>}
-          </Link>
+          </button>
         </div>
       </div>
     </header>
@@ -63,16 +99,27 @@ function Header({ searchQuery, onSearchChange }) {
 
 export default function App() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [isCartOpen, setIsCartOpen] = useState(false)
+  const [isLoginOpen, setIsLoginOpen] = useState(false)
 
   return (
     <BrowserRouter>
-      <Header searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+      <Header
+        onSearchChange={setSearchQuery}
+        onOpenCart={() => setIsCartOpen(true)}
+        onOpenLogin={() => setIsLoginOpen(true)}
+      />
 
       <Routes>
         <Route path="/" element={<Catalogo searchQuery={searchQuery} />} />
+        <Route path="/catalogo" element={<Catalogo searchQuery={searchQuery} />} />
         <Route path="/libro/:id" element={<BookDetail />} />
-        <Route path="/carrito" element={<Cart />} />
+        <Route path="/ia-picks" element={<IAPicks />} />
       </Routes>
+
+      <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+      <FloatingChat />
+      {isLoginOpen && <LoginModal onClose={() => setIsLoginOpen(false)} />}
     </BrowserRouter>
   )
 }

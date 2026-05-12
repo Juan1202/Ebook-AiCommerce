@@ -27,7 +27,7 @@ class UserModel(Base):
     hashed_password = Column(String(255), nullable=False)
     role = Column(SAEnum(UserRoleDB), default=UserRoleDB.user, nullable=False)
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
 
 
 class RevokedTokenModel(Base):
@@ -35,7 +35,7 @@ class RevokedTokenModel(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     jti = Column(String(50), unique=True, index=True, nullable=False)
-    revoked_at = Column(DateTime, default=datetime.datetime.utcnow)
+    revoked_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
 def get_db():
     db = SessionLocal()
     try:

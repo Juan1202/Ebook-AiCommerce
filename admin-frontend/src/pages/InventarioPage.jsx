@@ -176,7 +176,7 @@ export default InventarioPage;
 
 /* ================= ESTILOS ================= */
 
-const page = { padding: '30px', overflowY: 'auto', flex: 1, position: 'relative' };
+const page = { padding: '30px', overflowY: 'auto', flex: 1, position: 'relative', background: '#0f172a' };
 
 const headerWrap = {
   display: 'flex',

@@ -6,6 +6,7 @@ from typing import Optional
 import httpx
 
 from app.domain.interfaces.pricing_client import PriceQuote, PricingClient
+from app.infrastructure.clients.errors import UpstreamServiceError
 
 logger = logging.getLogger(__name__)
 
@@ -25,9 +26,14 @@ class HttpPricingClient(PricingClient):
                 async with httpx.AsyncClient(timeout=self._timeout) as client:
                     response = await client.get(url)
         except (httpx.ConnectError, httpx.TimeoutException) as exc:
-            logger.warning("pricing-service unreachable, treating as no quote: %s", exc)
-            return None
+            raise UpstreamServiceError("pricing-service", str(exc)) from exc
 
+        if response.status_code == 404:
+            return None
+        if response.status_code >= 500:
+            raise UpstreamServiceError(
+                "pricing-service", f"HTTP {response.status_code}"
+            )
         if response.status_code != 200:
             return None
 

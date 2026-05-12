@@ -2,18 +2,19 @@ import os
 import httpx
 from fastapi import Request, Response, HTTPException
 
-TIMEOUT = 5.0
+TIMEOUT = 30.0
 
 SERVICE_MAP = {
     "auth":            os.getenv("AUTH_SERVICE_URL",       "http://auth-service:8001"),
     "inventory":       os.getenv("INVENTORY_SERVICE_URL",  "http://inventory-service:8002"),
     "catalog":         os.getenv("CATALOG_SERVICE_URL",    "http://catalog-service:8003"),
     "enrichment":      os.getenv("ENRICHMENT_SERVICE_URL", "http://ai-enrichment-service:8004"),
-    "enrichment-mock": os.getenv("AI_ENRICHMENT_URL",      "http://ai-enrichment-mock:8006"),
     "pricing":         os.getenv("PRICING_SERVICE_URL",    "http://pricing-service:8005"),
     "quality":         os.getenv("DATA_QUALITY_URL",       "http://data-quality-module:8007"),
     "config":          os.getenv("CONFIG_MODULE_URL",      "http://config-module:8008"),
-    "order":           os.getenv("ORDER_SERVICE_URL",      "http://order-service:8010"),
+    "order":           os.getenv("ORDER_SERVICE_URL",          "http://order-service:8010"),
+    "assistant":       os.getenv("ASSISTANT_SERVICE_URL",      "http://ai-assistant-service:8011"),
+    "recommendations": os.getenv("RECOMMENDATION_SERVICE_URL", "http://recommendation-service:8012"),
 }
 
 

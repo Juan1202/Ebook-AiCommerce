@@ -9,6 +9,7 @@ class CatalogBook:
     book_id: str
     title: str
     author: Optional[str] = None
+    isbn: Optional[str] = None
     is_published: bool = True
 
 

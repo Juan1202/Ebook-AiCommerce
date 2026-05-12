@@ -2,13 +2,13 @@ import datetime
 import enum
 
 from sqlalchemy import (Boolean, Column, DateTime, Enum as SAEnum,
-                        Integer, String, Text, create_engine)
+                        Integer, JSON, String, Text, create_engine)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 from app.config import settings
 
-engine = create_engine(settings.DATABASE_URL)
+engine = create_engine(settings.DATABASE_URL, pool_pre_ping=True, pool_size=5, max_overflow=10)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -40,10 +40,10 @@ class InventoryItemModel(Base):
     quantity_available = Column(Integer, default=0)
     quantity_reserved = Column(Integer, default=0)
     condition = Column(SAEnum(ItemConditionDB), default=ItemConditionDB.good)
-    defects = Column(Text, nullable=True)
+    defects = Column(JSON, nullable=True)
     observations = Column(Text, nullable=True)
     import_batch_id = Column(Integer, nullable=True, index=True)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
 
 
 class ImportBatchModel(Base):
@@ -51,7 +51,7 @@ class ImportBatchModel(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     file_name = Column(String(300), nullable=False)
-    upload_date = Column(DateTime, default=datetime.datetime.utcnow)
+    upload_date = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
     processed_rows = Column(Integer, default=0)
     valid_rows = Column(Integer, default=0)
     invalid_rows = Column(Integer, default=0)

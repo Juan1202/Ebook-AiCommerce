@@ -10,8 +10,13 @@ export default function PriceBadge({ book, size = 'md' }) {
   }
 
   return (
-    <p className={`price-badge ${size}`}>
-      ${Number(price).toLocaleString('es-CO')}
-    </p>
+    <div className="price-badge-row">
+      <p className={`price-badge ${size}`}>
+        ${Number(price).toLocaleString('es-CO')}
+      </p>
+      <span className={`price-source-badge ${book?.is_fallback ? 'badge-estimado' : 'badge-verificado'}`}>
+        {book?.is_fallback ? 'Estimado' : 'Verificado'}
+      </span>
+    </div>
   )
 }

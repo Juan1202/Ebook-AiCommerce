@@ -8,10 +8,9 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.application.dtos import CreateOrderInput, OrderItemInput
+from app.application.errors import (InsufficientStockError, OrderNotFoundError)
 from app.application.use_cases.cancel_order import CancelOrderUseCase
-from app.application.use_cases.confirm_order import (ConfirmOrderUseCase,
-                                                     InsufficientStockError,
-                                                     OrderNotFoundError)
+from app.application.use_cases.confirm_order import ConfirmOrderUseCase
 from app.application.use_cases.create_order import (BookNotFoundError,
                                                     CreateOrderUseCase,
                                                     MissingPriceError)
@@ -190,10 +189,13 @@ def get_order(
 
 @router.get("", response_model=list[OrderResponse])
 def list_orders(
-    customer_id: str = Query(..., min_length=1),
+    customer_id: Optional[str] = Query(None),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
     repo: SqlAlchemyOrderRepository = Depends(get_order_repository),
 ) -> list[OrderResponse]:
-    orders = repo.list_by_customer(customer_id, limit=limit, offset=offset)
+    if customer_id:
+        orders = repo.list_by_customer(customer_id, limit=limit, offset=offset)
+    else:
+        orders = repo.list_all(limit=limit, offset=offset)
     return [_to_response(o) for o in orders]

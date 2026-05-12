@@ -59,7 +59,7 @@ async def test_calculate_price_bueno_condition(pricing_service, db_session):
     )
 
     assert decision.condition == BookCondition.BUENO
-    assert decision.condition_factor == 0.8
+    assert decision.condition_factor == 0.75
     assert decision.suggested_price >= settings.MIN_PRICE_THRESHOLD
 
 
@@ -74,7 +74,7 @@ async def test_calculate_price_aceptable_condition(pricing_service, db_session):
     )
 
     assert decision.condition == BookCondition.ACEPTABLE
-    assert decision.condition_factor == 0.6
+    assert decision.condition_factor == 0.50
     assert decision.suggested_price >= settings.MIN_PRICE_THRESHOLD
 
 
@@ -89,7 +89,7 @@ async def test_calculate_price_deteriorado_condition(pricing_service, db_session
     )
 
     assert decision.condition == BookCondition.DETERIORADO
-    assert decision.condition_factor == 0.4
+    assert decision.condition_factor == 0.25
     assert decision.suggested_price >= settings.MIN_PRICE_THRESHOLD
 
 
@@ -119,8 +119,8 @@ def test_minimum_price_threshold(pricing_service):
         book_id="test",
         condition=BookCondition.DETERIORADO,
         base_price=1.0,  # Very low base price
-        condition_factor=0.4,
-        suggested_price=0.4,  # Would be below threshold
+        condition_factor=0.25,
+        suggested_price=0.25,  # Would be below threshold
         references_used=0,
         source="fallback",
         explanation="Test",
@@ -137,8 +137,8 @@ def test_explanation_contains_key_information(pricing_service):
     """Test that explanations contain all required information"""
     explanation = pricing_service._build_explanation(
         base_price=15.99,
-        condition_factor=0.8,
-        suggested_price=12.79,
+        condition_factor=0.75,
+        suggested_price=11.99,
         references_used=5,
         source="external",
         condition=BookCondition.BUENO
@@ -147,8 +147,8 @@ def test_explanation_contains_key_information(pricing_service):
     assert "$15.99" in explanation
     assert "5 referencias" in explanation
     assert "BUENO" in explanation
-    assert "0.8" in explanation
-    assert "$12.79" in explanation
+    assert "0.75" in explanation
+    assert "$11.99" in explanation
 
 
 def test_external_api_status(pricing_service):

@@ -1,5 +1,6 @@
 import asyncio
-from datetime import datetime, timedelta
+from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Dict, Any
 import httpx
 from cachetools import TTLCache
@@ -8,15 +9,91 @@ from circuitbreaker import circuit
 from app.config import settings
 from app.domain.pricing import PricingReference
 
+_RETRYABLE_STATUS = frozenset({429, 500, 502, 503, 504})
+
+
+@dataclass
+class EbayPriceResult:
+    """Lightweight result returned by search_prices."""
+    price: float
+    currency: str
+    title: str
+    confidence_score: float
+
+
+async def search_prices(isbn: str, title: Optional[str] = None) -> List[EbayPriceResult]:
+    """
+    Search eBay for price references.  Returns a list of EbayPriceResult.
+    Falls back to an empty list on any error so the caller can apply
+    internal-rules fallback without crashing.
+    """
+    if not settings.EBAY_APP_ID:
+        return []
+
+    query = isbn if isbn else title or ""
+    if not query:
+        return []
+
+    params = {
+        "q": f'"{query}" book',
+        "category_ids": "267",
+        "limit": "10",
+        "sort": "price",
+    }
+    headers = {
+        "X-EBAY-C-MARKETPLACE-ID": "EBAY_US",
+        "X-EBAY-C-ENDUSERCTX": f"affiliateCampaignId={settings.EBAY_APP_ID}",
+    }
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            last_exc: BaseException = RuntimeError("no attempts")
+            data: Dict[str, Any] = {}
+            for attempt in range(3):
+                try:
+                    response = await client.get(settings.EBAY_API_URL, params=params, headers=headers)
+                    response.raise_for_status()
+                    data = response.json()
+                    break
+                except (httpx.ConnectError, httpx.TimeoutException, httpx.NetworkError) as exc:
+                    last_exc = exc
+                    if attempt < 2:
+                        await asyncio.sleep(2 ** attempt)
+                except httpx.HTTPStatusError as exc:
+                    if exc.response.status_code in _RETRYABLE_STATUS and attempt < 2:
+                        last_exc = exc
+                        await asyncio.sleep(2 ** attempt)
+                    else:
+                        raise
+            else:
+                raise last_exc
+
+        results: List[EbayPriceResult] = []
+        for item in data.get("itemSummaries", [])[:10]:
+            price_info = item.get("price", {})
+            value = price_info.get("value")
+            if not value:
+                continue
+            results.append(
+                EbayPriceResult(
+                    price=float(value),
+                    currency=price_info.get("currency", "USD"),
+                    title=item.get("title", ""),
+                    confidence_score=1.0,
+                )
+            )
+        return results
+    except Exception:
+        return []
+
 
 class ExternalAPIStatus:
     def __init__(self):
-        self.last_check = datetime.utcnow()
+        self.last_check = datetime.now(timezone.utc)
         self.is_available = True
         self.error_message = None
 
     def update_status(self, available: bool, error: str = None):
-        self.last_check = datetime.utcnow()
+        self.last_check = datetime.now(timezone.utc)
         self.is_available = available
         self.error_message = error
 
@@ -37,6 +114,9 @@ class EbayAdapter:
              recovery_timeout=settings.CIRCUIT_BREAKER_RECOVERY_TIMEOUT)
     async def get_book_prices(self, book_title: str, author: str = None) -> List[PricingReference]:
         """Get pricing references from eBay API"""
+        if not settings.EBAY_APP_ID:
+            return []
+
         cache_key = f"{book_title}_{author or ''}"
 
         if cache_key in self.cache:
@@ -60,14 +140,31 @@ class EbayAdapter:
                 'X-EBAY-C-ENDUSERCTX': f'affiliateCampaignId={settings.EBAY_APP_ID}'
             }
 
-            response = await self.client.get(
-                settings.EBAY_API_URL,
-                params=params,
-                headers=headers
-            )
-            response.raise_for_status()
+            last_exc: BaseException = RuntimeError("no attempts")
+            data: Dict[str, Any] = {}
+            for attempt in range(3):
+                try:
+                    response = await self.client.get(
+                        settings.EBAY_API_URL,
+                        params=params,
+                        headers=headers,
+                    )
+                    response.raise_for_status()
+                    data = response.json()
+                    break
+                except (httpx.ConnectError, httpx.TimeoutException, httpx.NetworkError) as exc:
+                    last_exc = exc
+                    if attempt < 2:
+                        await asyncio.sleep(2 ** attempt)
+                except httpx.HTTPStatusError as exc:
+                    if exc.response.status_code in _RETRYABLE_STATUS and attempt < 2:
+                        last_exc = exc
+                        await asyncio.sleep(2 ** attempt)
+                    else:
+                        raise
+            else:
+                raise last_exc
 
-            data = response.json()
             references = self._parse_ebay_response(data, book_title)
             self.cache[cache_key] = references
             self.status.update_status(True)
@@ -106,7 +203,7 @@ class EbayAdapter:
                     source="eBay",
                     price=price,
                     currency=currency,
-                    observed_at=datetime.utcnow(),
+                    observed_at=datetime.now(timezone.utc),
                     metadata={
                         'item_id': item.get('itemId'),
                         'title': item.get('title'),
@@ -155,7 +252,7 @@ class MockEbayAdapter(EbayAdapter):
                 source="eBay",
                 price=price,
                 currency="USD",
-                observed_at=datetime.utcnow(),
+                observed_at=datetime.now(timezone.utc),
                 metadata={
                     'item_id': f'mock_{i}',
                     'title': f"{book_title} - Copy {i+1}",

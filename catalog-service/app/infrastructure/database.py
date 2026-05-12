@@ -1,12 +1,12 @@
 import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text, create_engine
+from sqlalchemy import Boolean, Column, DateTime, Index, Integer, String, Text, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 from app.config import settings
 
-engine = create_engine(settings.DATABASE_URL)
+engine = create_engine(settings.DATABASE_URL, pool_pre_ping=True, pool_size=5, max_overflow=10)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -28,20 +28,22 @@ class BookModel(Base):
     publisher = Column(String(300), nullable=True)
     publication_year = Column(Integer, nullable=True)
     volume = Column(String(50), nullable=True)
-    isbn = Column(String(20), nullable=True, index=True)
-    issn = Column(String(20), nullable=True)
+    # PostgreSQL allows multiple NULLs in a unique index, so unique=True is safe
+    # for nullable ISBN/ISSN columns.
+    isbn = Column(String(20), nullable=True, unique=True, index=True)
+    issn = Column(String(20), nullable=True, unique=True)
     category_id = Column(Integer, nullable=True, index=True)
     description = Column(Text, nullable=True)
     cover_url = Column(String(500), nullable=True)
-    price = Column(Integer, nullable=True)
 
+    price = Column(Integer, nullable=True)
     condition = Column(String(100), nullable=True)
     stock = Column(Integer, nullable=True)
 
-    enriched_flag = Column(Boolean, default=False)
-    published_flag = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    enriched_flag = Column(Boolean, default=False, index=True)
+    published_flag = Column(Boolean, default=False, index=True)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), onupdate=lambda: datetime.datetime.now(datetime.timezone.utc))
 
 
 def get_db():

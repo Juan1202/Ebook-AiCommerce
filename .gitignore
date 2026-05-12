@@ -1,7 +1,9 @@
-# Credenciales — nunca subir al repositorio
+# ── Credenciales ─────────────────────────────────────────────
 .env
+.env.*
+!.env.example
 
-# Python
+# ── Python ───────────────────────────────────────────────────
 __pycache__/
 *.pyc
 *.pyo
@@ -14,21 +16,53 @@ build/
 venv/
 env/
 
-# Docker
+# ── Node ─────────────────────────────────────────────────────
+
+# ── Cobertura de tests ────────────────────────────────────────
+coverage/
+**/coverage/
+*.lcov
+lcov-report/
+
+# ── Bases de datos locales ────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+
+# ── Docker / logs ─────────────────────────────────────────────
 *.log
 
-# IDEs
+# ── IDEs ──────────────────────────────────────────────────────
 .vscode/
 .idea/
 *.swp
 
-# OS
+# ── OS ────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
-#Claude
--p/
-.claude/
-CLAUDE.md
-@echo off.bat
 
-BookFlow_Sprint1_E2E.postman_collection.json
+# ── Claude AI ─────────────────────────────────────────────────
+.claude/
+-p/
+CLAUDE*.md
+Contexto/
+CLAUDE(Auth-service)*.md
+CLAUDE(sprint3)*.md
+# ── Postman ───────────────────────────────────────────────────
+*.postman_collection.json
+*.postman_environment.json
+*_Postman.json
+BookFlow_Sprint2_Postman.json
+docs/testing/
+
+# ── Reportes / auditoría ──────────────────────────────────────
+AUDIT_REPORT.md
+AUDIT*.md
+
+# ── Scripts de utilidad locales ───────────────────────────────
+*.bat
+generate_docs.py
+e2e_flow_test.py
+
+# ── Archivos de prototipo / borrador ──────────────────────────
+Ebook AI/

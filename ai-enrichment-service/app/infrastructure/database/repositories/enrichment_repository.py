@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -24,11 +24,15 @@ class EnrichmentRepository(EnrichmentRepositoryInterface):
             author=author,
             publisher=publisher,
             status=EnrichmentStatusDB.pending,
-            requested_at=datetime.utcnow(),
+            requested_at=datetime.now(timezone.utc),
         )
         self.db.add(model)
-        self.db.commit()
-        self.db.refresh(model)
+        try:
+            self.db.commit()
+            self.db.refresh(model)
+        except Exception:
+            self.db.rollback()
+            raise
         return self._to_entity(model)
 
     def update_request_status(self, request_id: int, status: str,
@@ -43,7 +47,11 @@ class EnrichmentRepository(EnrichmentRepositoryInterface):
                 model.source_used = source_used
             if error_message is not None:
                 model.error_message = error_message
-            self.db.commit()
+            try:
+                self.db.commit()
+            except Exception:
+                self.db.rollback()
+                raise
 
     def get_request(self, request_id: int) -> Optional[EnrichmentRequest]:
         model = self.db.query(EnrichmentRequestModel).filter(
@@ -62,11 +70,15 @@ class EnrichmentRepository(EnrichmentRepositoryInterface):
             normalized_description=description,
             cover_url=cover_url,
             confidence_score=confidence_score,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
         )
         self.db.add(model)
-        self.db.commit()
-        self.db.refresh(model)
+        try:
+            self.db.commit()
+            self.db.refresh(model)
+        except Exception:
+            self.db.rollback()
+            raise
         return self._to_result_entity(model)
 
     def get_result_by_request(self, request_id: int) -> Optional[EnrichmentResult]:

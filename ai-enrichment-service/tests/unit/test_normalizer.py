@@ -2,7 +2,7 @@ import pytest
 
 from app.application.normalizer.isbn_validator import validate_and_normalize
 from app.application.normalizer.author_formatter import format_author
-from app.application.normalizer.text_normalizer import normalize_title
+from app.application.normalizer.text_normalizer import normalize_title, normalize_publisher
 from app.application.normalizer.source_merger import merge_results
 from app.domain.entities.enrichment import BookMetadata, EnrichmentSource
 
@@ -56,6 +56,23 @@ def test_source_merger_fills_missing_fields():
     assert merged.title == "A Book"
     assert merged.description == "A nice description"
     assert merged.cover_url == "https://example.com/cover.jpg"
+
+
+@pytest.mark.parametrize("raw,expected", [
+    ("Penguin Books", "Penguin"),
+    ("Penguin Publishers", "Penguin"),
+    ("HarperCollins Publishers", "HarperCollins"),
+    ("Harper Collins", "HarperCollins"),
+    ("Random House Inc.", "Random House"),
+    ("Simon and Schuster", "Simon & Schuster"),
+    ("Oxford University Press", "Oxford University Press"),
+    ("MIT Press", "MIT Press"),
+    ("Unknown Publisher", "Unknown Publisher"),
+    (None, None),
+    ("", None),
+])
+def test_normalize_publisher_homologation(raw, expected):
+    assert normalize_publisher(raw) == expected
 
 
 def test_duplicate_detection_by_isbn():

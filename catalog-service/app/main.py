@@ -1,9 +1,13 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 from app.infrastructure.database import Base, engine, SessionLocal
+
+logger = logging.getLogger(__name__)
 from app.infrastructure.catalog_repository import seed_categories, seed_books
 from app.routers import catalog_router, category_router
 
@@ -41,4 +45,13 @@ app.include_router(catalog_router.router, prefix="/books", tags=["books"])
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": "catalog-service"}
+    db_status = "disconnected"
+    db = SessionLocal()
+    try:
+        db.execute(text("SELECT 1"))
+        db_status = "connected"
+    except Exception as exc:
+        logger.warning("Health check DB probe failed: %s", exc)
+    finally:
+        db.close()
+    return {"status": "ok", "service": "catalog-service", "version": "1.0.0", "db": db_status}

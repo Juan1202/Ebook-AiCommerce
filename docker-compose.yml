@@ -15,6 +15,8 @@ volumes:
   pricing-db-data:
   enrichment-db-data:
   order-db-data:
+  assistant-db-data:
+  audit-db-data:
 
 services:
 
@@ -113,6 +115,8 @@ services:
       SECRET_KEY: ${JWT_SECRET_KEY}
       ALGORITHM: ${JWT_ALGORITHM}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES}
+      REFRESH_TOKEN_EXPIRE_MINUTES: ${JWT_REFRESH_EXPIRE_MINUTES:-1440}
+      BFF_ORIGIN: ${BFF_ORIGIN:-http://bff-gateway:8009}
     depends_on:
       auth-db:
         condition: service_healthy
@@ -161,14 +165,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
-  ai-enrichment-mock:
-    build: ./ai-enrichment-mock
-    ports:
-      - "8006:8006"
-    networks:
-      - bookflow-network
-    restart: on-failure
 
   order-db:
     image: postgres:15-alpine
@@ -271,6 +267,80 @@ services:
       - bookflow-network
     restart: always
 
+  # ─────────────────────────────────────────
+  # SPRINT 3 — AI Assistant & Recommendations
+  # ─────────────────────────────────────────
+  assistant-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${DB_NAME_ASSISTANT:-assistant_db}
+    volumes:
+      - assistant-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - bookflow-network
+
+  audit-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${DB_NAME_AUDIT:-audit_db}
+    volumes:
+      - audit-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - bookflow-network
+
+  ai-assistant-service:
+    build: ./ai-assistant-service
+    ports:
+      - "8011:8011"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@assistant-db:5432/${DB_NAME_ASSISTANT:-assistant_db}
+      CATALOG_SERVICE_URL: http://catalog-service:8003
+      PRICING_SERVICE_URL: http://pricing-service:8005
+      INVENTORY_SERVICE_URL: http://inventory-service:8002
+      HTTP_TIMEOUT: 5.0
+      SERVICE_PORT: 8011
+    depends_on:
+      assistant-db:
+        condition: service_healthy
+      catalog-service:
+        condition: service_started
+      pricing-service:
+        condition: service_started
+      inventory-service:
+        condition: service_started
+    networks:
+      - bookflow-network
+    restart: always
+
+  recommendation-service:
+    build: ./recommendation-service
+    ports:
+      - "8012:8012"
+    environment:
+      CATALOG_SERVICE_URL: http://catalog-service:8003
+      HTTP_TIMEOUT: 5.0
+      SERVICE_PORT: 8012
+    depends_on:
+      catalog-service:
+        condition: service_started
+    networks:
+      - bookflow-network
+    restart: always
+
   bff-gateway:
     build: ./bff-gateway
     ports:
@@ -279,22 +349,40 @@ services:
       AUTH_SERVICE_URL: http://auth-service:8001
       INVENTORY_SERVICE_URL: http://inventory-service:8002
       CATALOG_SERVICE_URL: http://catalog-service:8003
-      AI_ENRICHMENT_URL: http://ai-enrichment-mock:8006
       ENRICHMENT_SERVICE_URL: http://ai-enrichment-service:8004
       PRICING_SERVICE_URL: http://pricing-service:8005
       DATA_QUALITY_URL: http://data-quality-module:8007
       CONFIG_MODULE_URL: http://config-module:8008
       ORDER_SERVICE_URL: http://order-service:8010
+      ASSISTANT_SERVICE_URL: http://ai-assistant-service:8011
+      RECOMMENDATION_SERVICE_URL: http://recommendation-service:8012
+      AUDIT_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@audit-db:5432/${DB_NAME_AUDIT:-audit_db}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:3001}
     depends_on:
-      - auth-service
-      - inventory-service
-      - catalog-service
-      - ai-enrichment-mock
-      - ai-enrichment-service
-      - pricing-service
-      - data-quality-module
-      - config-module
-      - order-service
+      auth-service:
+        condition: service_started
+      inventory-service:
+        condition: service_started
+      catalog-service:
+        condition: service_started
+      ai-enrichment-service:
+        condition: service_started
+      pricing-service:
+        condition: service_started
+      data-quality-module:
+        condition: service_started
+      config-module:
+        condition: service_started
+      order-service:
+        condition: service_started
+      ai-assistant-service:
+        condition: service_started
+      recommendation-service:
+        condition: service_started
+      audit-db:
+        condition: service_healthy
     networks:
       - bookflow-network
     restart: on-failure
@@ -307,11 +395,14 @@ services:
     ports:
       - "3001:3001"
     environment:
-      VITE_BFF_URL: ${VITE_BFF_URL}
+      VITE_BFF_URL: ${VITE_BFF_URL:-http://localhost:8009}
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
     depends_on:
       - bff-gateway
     networks:
       - bookflow-network
+    restart: on-failure
 
   commercial-frontend:
     build: ./commercial-frontend
@@ -319,6 +410,9 @@ services:
       - "3000:3000"
     environment:
       VITE_BFF_URL: ${VITE_BFF_URL}
+    volumes:
+      - ./commercial-frontend/src:/app/src
+      - ./commercial-frontend/public:/app/public
     depends_on:
       - bff-gateway
     networks:

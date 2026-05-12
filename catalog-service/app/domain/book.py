@@ -24,13 +24,13 @@ class Book:
     category_id: Optional[int]
     description: Optional[str]
     cover_url: Optional[str]
-    price: Optional[int]
-    condition: Optional[str]
-    stock: Optional[int]
     enriched_flag: bool
     published_flag: bool
     created_at: Optional[datetime]
     updated_at: Optional[datetime]
+    price: Optional[int] = None
+    condition: Optional[str] = None
+    stock: Optional[int] = None
 
     def validate(self) -> List[str]:
         errors = []

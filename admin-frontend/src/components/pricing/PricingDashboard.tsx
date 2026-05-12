@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
-import PricingCard from "./PricingCard";
-import PricingFilters from "./PricingFilters";
-import { getPricingList, bulkCalculate } from "../../services/pricingService";
+import { useEffect, useState, Fragment } from "react";
+import PricingFilters, { FilterState } from "./PricingFilters";
+import PricingExplanation from "./PricingExplanation";
+import PricingHistory from "./PricingHistory";
+import { getPricingList, bulkCalculate, recalculatePrice, getCatalogBooks } from "../../services/pricingService";
 import styles from "./PricingDashboard.module.css";
 
 interface PricingItem {
@@ -10,30 +11,72 @@ interface PricingItem {
   condition: string;
   price: number;
   isFallback: boolean;
+  enrichedFlag: boolean;
 }
+
+const INITIAL_FILTERS: FilterState = {
+  source: "all",
+  condition: "",
+  minPrice: "",
+  maxPrice: "",
+};
+
+const parseError = (err: unknown, fallback: string): string => {
+  if (err && typeof err === "object") {
+    const e = err as { response?: { status?: number; data?: { detail?: string } }; message?: string };
+    if (e.response?.status) return `Error ${e.response.status}: ${e.response.data?.detail ?? fallback}`;
+    if (e.message) return `Sin respuesta del servidor: ${e.message}`;
+  }
+  return fallback;
+};
 
 const PricingDashboard = () => {
   const [data, setData] = useState<PricingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [calculating, setCalculating] = useState(false);
   const [error, setError] = useState("");
-  const [filter, setFilter] = useState("all");
+  const [filters, setFilters] = useState<FilterState>(INITIAL_FILTERS);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [prices, setPrices] = useState<Record<string, number>>({});
+  const [historyKeys, setHistoryKeys] = useState<Record<string, number>>({});
+  const [recalcLoading, setRecalcLoading] = useState<Record<string, boolean>>({});
+  const [recalcError, setRecalcError] = useState<Record<string, string>>({});
 
   const load = async () => {
     setLoading(true);
     setError("");
     try {
-      const res = await getPricingList();
-      const items: PricingItem[] = (res.items || res || []).map((item: Record<string, unknown>) => ({
-        book_id: String(item.book_id ?? item.id ?? ""),
-        title: String(item.title ?? item.book_id ?? "Sin título"),
-        condition: String(item.condition ?? "BUENO"),
-        price: Number(item.suggested_price ?? item.price ?? 0),
-        isFallback: Boolean(item.is_fallback ?? item.isFallback ?? false),
-      }));
+      const [pricingResult, catalogResult] = await Promise.allSettled([
+        getPricingList(),
+        getCatalogBooks(),
+      ]);
+
+      if (pricingResult.status === "rejected") throw pricingResult.reason;
+      const res = pricingResult.value;
+
+      const enrichmentMap: Record<string, boolean> = {};
+      if (catalogResult.status === "fulfilled") {
+        const raw = catalogResult.value;
+        const books: Record<string, unknown>[] = Array.isArray(raw) ? raw : (raw?.books ?? raw?.items ?? []);
+        for (const b of books) {
+          enrichmentMap[String(b.id ?? "")] = Boolean(b.enriched_flag);
+        }
+      }
+
+      const items: PricingItem[] = (res.items || res || []).map((item: Record<string, unknown>) => {
+        const id = String(item.book_id ?? item.id ?? "");
+        return {
+          book_id: id,
+          title: String(item.title ?? item.book_id ?? "Sin título"),
+          condition: String(item.condition ?? "BUENO"),
+          price: Number(item.suggested_price ?? item.price ?? 0),
+          isFallback: Boolean(item.is_fallback ?? item.isFallback ?? false),
+          enrichedFlag: enrichmentMap[id] ?? false,
+        };
+      });
       setData(items);
-    } catch {
-      setError("No se pudo conectar con el servicio de pricing.");
+    } catch (err: unknown) {
+      setError(parseError(err, "No se pudo conectar con el servicio de pricing."));
       setData([]);
     } finally {
       setLoading(false);
@@ -46,25 +89,48 @@ const PricingDashboard = () => {
     try {
       await bulkCalculate();
       await load();
-    } catch {
-      setError("Error al calcular precios del catálogo.");
+    } catch (err: unknown) {
+      setError(parseError(err, "Error al calcular precios del catálogo."));
     } finally {
       setCalculating(false);
+    }
+  };
+
+  const handleRecalculate = async (bookId: string, title: string, condition: string) => {
+    setRecalcLoading((prev) => ({ ...prev, [bookId]: true }));
+    setRecalcError((prev) => ({ ...prev, [bookId]: "" }));
+    try {
+      const res = await recalculatePrice(bookId, title, condition);
+      const newPrice = res.suggested_price ?? res.price;
+      setPrices((prev) => ({ ...prev, [bookId]: newPrice }));
+      setHistoryKeys((prev) => ({ ...prev, [bookId]: (prev[bookId] ?? 0) + 1 }));
+    } catch {
+      setRecalcError((prev) => ({
+        ...prev,
+        [bookId]: "No se pudo recalcular el precio. Intente de nuevo.",
+      }));
+    } finally {
+      setRecalcLoading((prev) => ({ ...prev, [bookId]: false }));
     }
   };
 
   useEffect(() => { load(); }, []);
 
   const filtered = data.filter((item) => {
-    if (filter === "verified") return !item.isFallback;
-    if (filter === "estimated") return item.isFallback;
+    const currentPrice = prices[item.book_id] ?? item.price;
+    if (filters.source === "verified" && item.isFallback) return false;
+    if (filters.source === "estimated" && !item.isFallback) return false;
+    if (filters.condition && item.condition !== filters.condition) return false;
+    if (filters.minPrice && currentPrice < Number(filters.minPrice)) return false;
+    if (filters.maxPrice && currentPrice > Number(filters.maxPrice)) return false;
     return true;
   });
 
   const verifiedCount = data.filter((i) => !i.isFallback).length;
   const estimatedCount = data.filter((i) => i.isFallback).length;
+  const enrichedCount = data.filter((i) => i.enrichedFlag).length;
   const avgPrice = data.length
-    ? (data.reduce((s, i) => s + i.price, 0) / data.length).toFixed(2)
+    ? (data.reduce((s, i) => s + (prices[i.book_id] ?? i.price), 0) / data.length).toFixed(2)
     : "0.00";
 
   return (
@@ -105,9 +171,13 @@ const PricingDashboard = () => {
           <span className={styles.kpiNum}>${avgPrice}</span>
           <span className={styles.kpiLabel}>Precio promedio</span>
         </div>
+        <div className={`${styles.kpi} ${styles.kpiTeal}`}>
+          <span className={styles.kpiNum}>{enrichedCount}</span>
+          <span className={styles.kpiLabel}>Enriquecidos IA</span>
+        </div>
       </div>
 
-      <PricingFilters filter={filter} setFilter={setFilter} />
+      <PricingFilters filters={filters} setFilters={setFilters} />
 
       {loading && (
         <div className={styles.stateWrap}>
@@ -142,11 +212,81 @@ const PricingDashboard = () => {
         </div>
       )}
 
-      {!loading && !error && (
-        <div className={styles.grid}>
-          {filtered.map((item) => (
-            <PricingCard key={item.book_id} data={item} />
-          ))}
+      {!loading && !error && filtered.length > 0 && (
+        <div className={styles.tableWrap}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th className={styles.th}>Título</th>
+                <th className={styles.th}>Condición</th>
+                <th className={styles.th}>Precio</th>
+                <th className={styles.th}>Fuente</th>
+                <th className={styles.th}>Estado IA</th>
+                <th className={styles.th}>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((item) => {
+                const currentPrice = prices[item.book_id] ?? item.price;
+                const isExpanded = expandedId === item.book_id;
+                const isRecalculating = recalcLoading[item.book_id] ?? false;
+                const rowError = recalcError[item.book_id] ?? "";
+                const hKey = historyKeys[item.book_id] ?? 0;
+
+                return (
+                  <Fragment key={item.book_id}>
+                    <tr className={styles.tr}>
+                      <td className={`${styles.td} ${styles.titleCell}`} title={item.title}>{item.title}</td>
+                      <td className={styles.td}>{item.condition}</td>
+                      <td className={`${styles.td} ${styles.priceCell}`}>
+                        ${Number(currentPrice).toFixed(2)}
+                      </td>
+                      <td className={styles.td}>
+                        <span className={item.isFallback ? styles.badgeEstimated : styles.badgeVerified}>
+                          {item.isFallback ? "Estimado" : "Verificado"}
+                        </span>
+                      </td>
+                      <td className={styles.td}>
+                        <span className={item.enrichedFlag ? styles.badgeEnriched : styles.badgePending}>
+                          {item.enrichedFlag ? "Enriquecido" : "Pendiente"}
+                        </span>
+                      </td>
+                      <td className={`${styles.td} ${styles.actions}`}>
+                        <button
+                          className={styles.btnSecondary}
+                          onClick={() => setExpandedId(isExpanded ? null : item.book_id)}
+                        >
+                          {isExpanded ? "Ocultar" : "Detalle"}
+                        </button>
+                        <button
+                          className={styles.btnPrimary}
+                          onClick={() => handleRecalculate(item.book_id, item.title, item.condition)}
+                          disabled={isRecalculating}
+                        >
+                          {isRecalculating ? "Calculando…" : "Recalcular"}
+                        </button>
+                      </td>
+                    </tr>
+
+                    {rowError && (
+                      <tr className={styles.rowError}>
+                        <td colSpan={6} className={styles.td}>⚠️ {rowError}</td>
+                      </tr>
+                    )}
+
+                    {isExpanded && (
+                      <tr className={styles.expandRow}>
+                        <td colSpan={6} className={styles.expandCell}>
+                          <PricingExplanation bookId={item.book_id} />
+                          <PricingHistory key={hKey} bookId={item.book_id} />
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

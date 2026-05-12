@@ -6,8 +6,8 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.application.catalog_use_cases import (
-    create_book, delete_book, get_book, list_books, publish_book,
-    search_books, update_book,
+    create_book, delete_book, get_book, list_books, mark_enriched,
+    publish_book, search_books, update_book,
 )
 from app.infrastructure.database import get_db
 
@@ -135,3 +135,11 @@ def publish(book_id: int, db: Session = Depends(get_db)):
         return _resp(b)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
+
+
+@router.patch("/{book_id}/mark-enriched", response_model=BookResponse)
+def mark_enriched_endpoint(book_id: int, db: Session = Depends(get_db)):
+    b = mark_enriched(db, book_id)
+    if not b:
+        raise HTTPException(status_code=404, detail="Libro no encontrado")
+    return _resp(b)

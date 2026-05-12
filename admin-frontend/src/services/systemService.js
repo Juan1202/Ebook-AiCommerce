@@ -1,11 +1,11 @@
-const GATEWAY = 'http://localhost:8009';
+const GATEWAY = import.meta.env.VITE_BFF_URL || 'http://localhost:8009';
 
 const SERVICE_LABELS = {
   auth:            'Auth Service',
   inventory:       'Inventory Service',
   catalog:         'Catalog Service',
   pricing:         'Pricing Service',
-  'enrichment-real': 'AI Enrichment',
+  enrichment:        'AI Enrichment',
   quality:         'Data Quality',
   config:          'Config Module',
 };

@@ -342,8 +342,12 @@ def enrich_book_logic(payload: dict, db: Session) -> dict:
         status=EnrichmentStatusDB.processing,
     )
     db.add(req)
-    db.commit()
-    db.refresh(req)
+    try:
+        db.commit()
+        db.refresh(req)
+    except Exception:
+        db.rollback()
+        raise
 
     google_result = None
     open_result = None
@@ -408,7 +412,11 @@ def enrich_book_logic(payload: dict, db: Session) -> dict:
 
     req.status = EnrichmentStatusDB.completed
     req.source_used = result["source"]
-    db.commit()
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
 
     catalog_sync = sync_with_catalog(result, isbn)
 

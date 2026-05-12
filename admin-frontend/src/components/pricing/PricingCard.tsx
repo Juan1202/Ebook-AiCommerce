@@ -1,78 +1,72 @@
-import { useState, useEffect } from "react";
-import PricingChart from "./PricingChart";
+import { useState } from "react";
+import PricingExplanation from "./PricingExplanation";
+import PricingHistory from "./PricingHistory";
 import { recalculatePrice } from "../../services/pricingService";
 import styles from "./PricingCard.module.css";
 
-interface Props {
-  data: any;
+interface PricingItem {
+  book_id: string;
+  title: string;
+  condition: string;
+  price: number;
+  isFallback: boolean;
 }
 
-const PricingCard = ({ data }: Props) => {
+interface Props {
+  data: PricingItem;
+  onRecalculated?: (bookId: string, newPrice: number) => void;
+}
+
+const PricingCard = ({ data, onRecalculated }: Props) => {
   const [price, setPrice] = useState(data.price);
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [history, setHistory] = useState<any[]>([]);
-
-  const getDate = () =>
-    new Date().toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" });
-
-  useEffect(() => {
-    const saved = localStorage.getItem(`history-${data.book_id}`);
-    if (saved) setHistory(JSON.parse(saved));
-  }, []);
+  const [error, setError] = useState("");
+  const [historyKey, setHistoryKey] = useState(0);
 
   const handleRecalculate = async () => {
     setLoading(true);
-
-    let newPrice;
-
+    setError("");
     try {
       const res = await recalculatePrice(data.book_id, data.title, data.condition ?? "BUENO");
-      newPrice = res.suggested_price ?? res.price;
+      const newPrice = res.suggested_price ?? res.price;
+      setPrice(newPrice);
+      setHistoryKey((k) => k + 1);
+      onRecalculated?.(data.book_id, newPrice);
     } catch {
-      const min = Number(localStorage.getItem("minPrice") || 40000);
-      const max = Number(localStorage.getItem("maxPrice") || 80000);
-      newPrice = Math.floor(Math.random() * (max - min) + min);
+      setError("No se pudo recalcular el precio. Intente de nuevo.");
+    } finally {
+      setLoading(false);
     }
-
-    setPrice(newPrice);
-
-    const updated = [{ price: newPrice, date: getDate() }, ...history];
-    setHistory(updated);
-
-    localStorage.setItem(`history-${data.book_id}`, JSON.stringify(updated));
-
-    window.dispatchEvent(new Event("storage"));
-
-    setLoading(false);
   };
 
   return (
     <div className={styles.card}>
-      <h3>{data.title}</h3>
-      <p className={styles.price}>${price}</p>
+      <div className={styles.header}>
+        <h3 className={styles.title}>{data.title}</h3>
+        <span className={data.isFallback ? styles.estimated : styles.verified}>
+          {data.isFallback ? "Estimado" : "Verificado"}
+        </span>
+      </div>
 
-      <span className={data.isFallback ? styles.estimated : styles.verified}>
-        {data.isFallback ? "Estimado" : "Verificado"}
-      </span>
+      <p className={styles.price}>${Number(price).toFixed(2)}</p>
+      <p className={styles.condition}>Condición: {data.condition}</p>
+
+      {error && <p className={styles.errorMsg}>{error}</p>}
 
       <div className={styles.buttons}>
-        <button onClick={() => setShow(!show)}>Detalle</button>
-        <button onClick={handleRecalculate} disabled={loading}>
-          {loading ? "..." : "Recalcular"}
+        <button className={styles.buttonSecondary} onClick={() => setShow(!show)}>
+          {show ? "Ocultar" : "Detalle"}
+        </button>
+        <button className={styles.buttonPrimary} onClick={handleRecalculate} disabled={loading}>
+          {loading ? "Calculando…" : "Recalcular"}
         </button>
       </div>
 
       {show && (
-        <div>
-          <p><strong>Historial</strong></p>
-          <ul>
-            {history.map((h, i) => (
-              <li key={i}>${h.price} - {h.date}</li>
-            ))}
-          </ul>
-
-          <PricingChart history={history} />
+        <div className={styles.detail}>
+          <PricingExplanation bookId={data.book_id} />
+          <PricingHistory key={historyKey} bookId={data.book_id} />
         </div>
       )}
     </div>

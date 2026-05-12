@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { getServicesHealth } from '../services/systemService';
 import { getLotes } from '../services/inventoryService';
+import { Boxes, SlidersHorizontal, Tag, Sparkles, ExternalLink } from 'lucide-react';
 
 const DashboardPage = ({ onNavegar }) => {
   const [servicios, setServicios] = useState([]);
   const [lotes, setLotes] = useState([]);
   const [cargandoServicios, setCargandoServicios] = useState(true);
   const [cargandoLotes, setCargandoLotes] = useState(true);
+  const [errorServicios, setErrorServicios] = useState(null);
+  const [errorLotes, setErrorLotes] = useState(null);
 
   useEffect(() => {
     let activo = true;
@@ -15,8 +18,11 @@ const DashboardPage = ({ onNavegar }) => {
       try {
         const svcs = await getServicesHealth();
         if (activo) setServicios(svcs);
-      } catch {
-        if (activo) setServicios([]);
+      } catch (e) {
+        if (activo) {
+          setServicios([]);
+          setErrorServicios(e?.message || "Error al cargar servicios");
+        }
       } finally {
         if (activo) setCargandoServicios(false);
       }
@@ -26,8 +32,11 @@ const DashboardPage = ({ onNavegar }) => {
       try {
         const data = await getLotes();
         if (activo) setLotes(Array.isArray(data) ? data : []);
-      } catch {
-        if (activo) setLotes([]);
+      } catch (e) {
+        if (activo) {
+          setLotes([]);
+          setErrorLotes(e?.message || "Error al cargar lotes");
+        }
       } finally {
         if (activo) setCargandoLotes(false);
       }
@@ -39,37 +48,42 @@ const DashboardPage = ({ onNavegar }) => {
     return () => { activo = false; };
   }, []);
 
-  const totalValidos = lotes.reduce((s, l) => s + (l.valid_rows || 0), 0);
+  const totalValidos   = lotes.reduce((s, l) => s + (l.valid_rows   || 0), 0);
   const totalInvalidos = lotes.reduce((s, l) => s + (l.invalid_rows || 0), 0);
-  const ultimosLotes = [...lotes].slice(-3).reverse();
+  const ultimosLotes   = [...lotes].slice(-3).reverse();
+  const serviciosOnline = servicios.filter(s => s.status === 'online').length;
 
   return (
-    <div style={page}>
-      <div style={headerWrap}>
-        <h1 style={title}>Dashboard</h1>
-        <p style={subtitle}>Vista general del sistema BookFlow</p>
-      </div>
-
-      {/* KPIs rápidos */}
-      <div style={kpiGrid}>
-        <KpiCard label="Total de Lotes" value={lotes.length} loading={cargandoLotes} color="#3b82f6" />
-        <KpiCard label="Registros Válidos" value={totalValidos} loading={cargandoLotes} color="#22c55e" />
-        <KpiCard label="Registros Inválidos" value={totalInvalidos} loading={cargandoLotes} color="#ef4444" />
+    <div className="px-7 py-6">
+      {/* KPIs */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <KpiCard label="Total de Lotes"      value={lotes.length}    loading={cargandoLotes}    tone="neutral" />
+        <KpiCard label="Registros Válidos"   value={totalValidos}    loading={cargandoLotes}    tone="success" />
+        <KpiCard label="Registros Inválidos" value={totalInvalidos}  loading={cargandoLotes}    tone="danger"  />
         <KpiCard
           label="Servicios Activos"
-          value={`${servicios.filter(s => s.status === 'online').length} / ${servicios.length}`}
+          value={cargandoServicios ? null : `${serviciosOnline} / ${servicios.length}`}
           loading={cargandoServicios}
-          color="#a78bfa"
+          tone="ai"
         />
       </div>
 
       {/* Estado de servicios */}
-      <section style={section}>
-        <div style={sectionHeader}>
-          <h2 style={sectionTitle}>Estado de Servicios</h2>
-          {cargandoServicios && <span style={loadingBadge}>Verificando...</span>}
+      <section className="mt-6">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-[15px] font-semibold tracking-tight text-[#f1f5f9]">Estado de Servicios</h2>
+          {cargandoServicios && (
+            <span className="rounded-full bg-[#1e293b] px-2.5 py-0.5 text-[11.5px] text-[#94a3b8]">
+              Verificando…
+            </span>
+          )}
         </div>
-        <div style={servicesGrid}>
+        {errorServicios && (
+          <div className="mb-3 rounded-lg bg-rose-900/40 border border-rose-700 px-4 py-2 text-sm text-rose-400">
+            {errorServicios}
+          </div>
+        )}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {cargandoServicios
             ? Array(7).fill(0).map((_, i) => <ServiceCardSkeleton key={i} />)
             : servicios.map((svc) => <ServiceCard key={svc.key} svc={svc} />)}
@@ -77,59 +91,78 @@ const DashboardPage = ({ onNavegar }) => {
       </section>
 
       {/* Lotes recientes */}
-      <section style={section}>
-        <div style={sectionHeader}>
-          <h2 style={sectionTitle}>Lotes Recientes</h2>
-          <button style={linkBtn} onClick={() => onNavegar('inventario')}>
+      <section className="mt-6">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-[15px] font-semibold tracking-tight text-[#f1f5f9]">Lotes Recientes</h2>
+          <button
+            type="button"
+            onClick={() => onNavegar('inventario')}
+            className="text-[12.5px] text-[#60a5fa] transition hover:text-[#f1f5f9]"
+          >
             Ver todos →
           </button>
         </div>
-        {cargandoLotes ? (
-          <p style={emptyText}>Cargando lotes...</p>
-        ) : ultimosLotes.length === 0 ? (
-          <p style={emptyText}>No hay lotes registrados aún.</p>
-        ) : (
-          <div style={recentList}>
-            {ultimosLotes.map((l) => (
-              <div key={l.id} style={recentItem}>
-                <div>
-                  <span style={recentId}>Lote #{l.id}</span>
-                  {l.file_name && <span style={recentFile}>{l.file_name}</span>}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <span style={recentStat}>{l.valid_rows} válidos · {l.invalid_rows} inválidos</span>
-                  <span style={badgeStyle(l.status)}>{l.status}</span>
-                </div>
-              </div>
-            ))}
+        {errorLotes && (
+          <div className="mb-3 rounded-lg bg-rose-900/40 border border-rose-700 px-4 py-2 text-sm text-rose-400">
+            {errorLotes}
           </div>
         )}
+        <div className="overflow-hidden rounded-2xl bg-[#1e293b] ring-1 ring-[#334155]">
+          {cargandoLotes ? (
+            <div className="px-5 py-4 text-[13px] text-[#94a3b8]">Cargando lotes…</div>
+          ) : ultimosLotes.length === 0 ? (
+            <div className="px-5 py-4 text-[13px] text-[#94a3b8]">No hay lotes registrados aún.</div>
+          ) : (
+            ultimosLotes.map((l, i) => (
+              <div
+                key={l.id}
+                className={`flex items-center justify-between px-5 py-3.5 ${
+                  i < ultimosLotes.length - 1 ? 'border-b border-[#334155]' : ''
+                }`}
+              >
+                <div>
+                  <span className="text-[13.5px] font-medium text-[#f1f5f9]">Lote #{l.id}</span>
+                  {l.file_name && (
+                    <span className="ml-2 text-[12px] text-[#94a3b8]">{l.file_name}</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="num text-[12.5px] text-[#94a3b8]">
+                    {l.valid_rows} válidos · {l.invalid_rows} inválidos
+                  </span>
+                  <LoteBadge status={l.status} />
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </section>
 
       {/* Accesos rápidos */}
-      <section style={section}>
-        <h2 style={sectionTitle}>Accesos Rápidos</h2>
-        <div style={quickGrid}>
+      <section className="mt-6">
+        <h2 className="mb-3 text-[15px] font-semibold tracking-tight text-[#f1f5f9]">Accesos Rápidos</h2>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <QuickCard
-            icon="⊞"
+            icon={Boxes}
             titulo="Gestionar Inventario"
             desc="Ver lotes, subir archivos y revisar errores"
             onClick={() => onNavegar('inventario')}
           />
           <QuickCard
-            icon="◑"
+            icon={SlidersHorizontal}
             titulo="Ver Reportes"
             desc="Estadísticas y análisis de los datos cargados"
             onClick={() => onNavegar('reportes')}
           />
           <QuickCard
-            icon="◎"
+            icon={Tag}
             titulo="Precios IA"
             desc="Revisar y recalcular precios sugeridos"
             onClick={() => onNavegar('precios')}
+            ai
           />
           <QuickCard
-            icon="⊙"
+            icon={ExternalLink}
             titulo="Ver Tienda"
             desc="Abrir el catálogo comercial en una nueva pestaña"
             href="http://localhost:3000"
@@ -142,213 +175,120 @@ const DashboardPage = ({ onNavegar }) => {
 
 /* ── Sub-componentes ── */
 
-const KpiCard = ({ label, value, loading, color }) => (
-  <div style={kpiCard}>
-    <p style={kpiLabel}>{label}</p>
-    {loading
-      ? <div style={skeleton(28)} />
-      : <h2 style={{ ...kpiValue, color }}>{value}</h2>}
-  </div>
-);
+const TONE = {
+  neutral: { value: 'text-[#f1f5f9]'    },
+  success: { value: 'text-emerald-400'   },
+  danger:  { value: 'text-rose-400'      },
+  ai:      { value: 'text-amber-400'     },
+};
 
-const ServiceCard = ({ svc }) => (
-  <div style={serviceCard}>
-    <div style={serviceIndicator(svc.status)} />
-    <div>
-      <p style={serviceName}>{svc.name}</p>
-      <p style={serviceStatus(svc.status)}>
-        {svc.status === 'online' ? 'En línea' : svc.status === 'degraded' ? 'Degradado' : 'Fuera de línea'}
-      </p>
+const KpiCard = ({ label, value, loading, tone = 'neutral' }) => {
+  const t = TONE[tone] ?? TONE.neutral;
+  return (
+    <div className="relative overflow-hidden rounded-2xl bg-[#1e293b] p-5 ring-1 ring-[#334155]">
+      {tone === 'ai' && (
+        <div
+          className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full"
+          style={{ background: 'radial-gradient(closest-side, rgba(251,191,36,.35), transparent 70%)' }}
+        />
+      )}
+      <div className="relative">
+        <div className="flex items-center gap-1 text-[11px] uppercase tracking-[.14em] text-[#94a3b8]">
+          {tone === 'ai' && <Sparkles size={11} className="text-amber-400" />}
+          {label}
+        </div>
+        {loading ? (
+          <div className="mt-3 h-8 w-24 animate-pulse rounded-lg bg-[#334155]" />
+        ) : (
+          <div className={`num mt-2 text-[32px] font-semibold tracking-tight ${t.value}`}>
+            {typeof value === 'number' && value > 999
+              ? value.toLocaleString('es-ES')
+              : (value ?? '—')}
+          </div>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
+
+const ServiceCard = ({ svc }) => {
+  const isOnline   = svc.status === 'online';
+  const isDegraded = svc.status === 'degraded';
+  const dotCls = isOnline
+    ? 'bg-emerald-500 shadow-[0_0_6px_rgba(34,197,94,.5)]'
+    : isDegraded ? 'bg-amber-400' : 'bg-rose-500';
+  const statusText  = isOnline ? 'En línea' : isDegraded ? 'Degradado' : 'Fuera de línea';
+  const statusColor = isOnline ? 'text-emerald-400' : isDegraded ? 'text-amber-400' : 'text-rose-400';
+  return (
+    <div className="flex items-center gap-3 rounded-xl bg-[#1e293b] p-3.5 ring-1 ring-[#334155]">
+      <div className={`h-2.5 w-2.5 shrink-0 rounded-full ${dotCls}`} />
+      <div>
+        <p className="text-[13px] font-medium text-[#f1f5f9]">{svc.name}</p>
+        <p className={`text-[11px] ${statusColor}`}>{statusText}</p>
+      </div>
+    </div>
+  );
+};
 
 const ServiceCardSkeleton = () => (
-  <div style={serviceCard}>
-    <div style={{ ...serviceIndicator('loading'), opacity: 0.3 }} />
-    <div style={{ flex: 1 }}>
-      <div style={skeleton(14)} />
-      <div style={{ ...skeleton(12), marginTop: 6, width: '60%' }} />
+  <div className="flex items-center gap-3 rounded-xl bg-[#1e293b] p-3.5 ring-1 ring-[#334155]">
+    <div className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-[#334155]" />
+    <div className="flex-1">
+      <div className="h-3 w-28 animate-pulse rounded bg-[#334155]" />
+      <div className="mt-1.5 h-2.5 w-16 animate-pulse rounded bg-[#334155]" />
     </div>
   </div>
 );
 
-const QuickCard = ({ icon, titulo, desc, onClick, href }) => {
+const LoteBadge = ({ status }) => {
+  if (status === 'COMPLETADO') return (
+    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ring-1"
+      style={{ background: '#052e16', color: '#22c55e', borderColor: '#166534' }}>
+      {status}
+    </span>
+  );
+  if (status === 'ERROR') return (
+    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ring-1"
+      style={{ background: '#2b0a0a', color: '#ef4444', borderColor: '#7f1d1d' }}>
+      {status}
+    </span>
+  );
+  return (
+    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ring-1"
+      style={{ background: '#3b2f0a', color: '#f59e0b', borderColor: '#92400e' }}>
+      {status}
+    </span>
+  );
+};
+
+const QuickCard = ({ icon: Icon, titulo, desc, onClick, href, ai }) => {
+  const cardCls = "flex w-full items-start gap-3 rounded-xl bg-[#1e293b] p-4 text-left ring-1 ring-[#334155] transition hover:ring-[#60a5fa] hover:bg-[#1e3a5f]";
+  const iconCls = ai
+    ? 'grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-400/15 text-amber-400'
+    : 'grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#334155] text-[#94a3b8]';
+  const inner = (
+    <>
+      <div className={iconCls}>
+        <Icon size={16} strokeWidth={1.8} />
+      </div>
+      <div>
+        <p className="text-[13.5px] font-semibold text-[#f1f5f9]">{titulo}</p>
+        <p className="mt-0.5 text-[12px] text-[#94a3b8]">{desc}</p>
+      </div>
+    </>
+  );
   if (href) {
     return (
-      <a href={href} target="_blank" rel="noreferrer" style={{ ...quickCard, textDecoration: 'none' }}>
-        <span style={quickIcon}>{icon}</span>
-        <div>
-          <p style={quickTitle}>{titulo}</p>
-          <p style={quickDesc}>{desc}</p>
-        </div>
+      <a href={href} target="_blank" rel="noreferrer" className={`${cardCls} no-underline`}>
+        {inner}
       </a>
     );
   }
   return (
-    <button style={quickCard} onClick={onClick}>
-      <span style={quickIcon}>{icon}</span>
-      <div>
-        <p style={quickTitle}>{titulo}</p>
-        <p style={quickDesc}>{desc}</p>
-      </div>
+    <button type="button" onClick={onClick} className={cardCls}>
+      {inner}
     </button>
   );
 };
 
 export default DashboardPage;
-
-
-/* ================= ESTILOS ================= */
-
-const page = { padding: '30px', overflowY: 'auto', flex: 1 };
-
-const headerWrap = { marginBottom: '28px' };
-const title = { fontSize: '22px', margin: 0, color: '#e2e8f0' };
-const subtitle = { color: '#64748b', marginTop: '5px', fontSize: '14px' };
-
-const kpiGrid = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-  gap: '16px',
-  marginBottom: '28px',
-};
-
-const kpiCard = {
-  background: '#020617',
-  border: '1px solid #1e293b',
-  borderRadius: '12px',
-  padding: '20px',
-};
-
-const kpiLabel = { fontSize: '13px', color: '#94a3b8', marginBottom: '8px' };
-const kpiValue = { fontSize: '28px', fontWeight: '600', margin: 0 };
-
-const section = { marginBottom: '28px' };
-
-const sectionHeader = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  marginBottom: '14px',
-};
-
-const sectionTitle = { fontSize: '16px', fontWeight: '600', color: '#e2e8f0', margin: 0 };
-
-const loadingBadge = {
-  fontSize: '12px',
-  color: '#64748b',
-  background: '#1e293b',
-  padding: '3px 10px',
-  borderRadius: '20px',
-};
-
-const linkBtn = {
-  background: 'transparent',
-  border: 'none',
-  color: '#3b82f6',
-  fontSize: '13px',
-  cursor: 'pointer',
-  padding: '4px 0',
-};
-
-const servicesGrid = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-  gap: '12px',
-};
-
-const serviceCard = {
-  background: '#020617',
-  border: '1px solid #1e293b',
-  borderRadius: '10px',
-  padding: '14px 16px',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '12px',
-};
-
-const serviceIndicator = (status) => ({
-  width: '10px',
-  height: '10px',
-  borderRadius: '50%',
-  flexShrink: 0,
-  background: status === 'online' ? '#22c55e' : status === 'degraded' ? '#f59e0b' : '#ef4444',
-  boxShadow: status === 'online' ? '0 0 6px #22c55e55' : 'none',
-});
-
-const serviceName = { fontSize: '13px', color: '#e2e8f0', margin: 0, fontWeight: '500' };
-const serviceStatus = (status) => ({
-  fontSize: '11px',
-  color: status === 'online' ? '#22c55e' : status === 'degraded' ? '#f59e0b' : '#64748b',
-  marginTop: '2px',
-});
-
-const recentList = {
-  background: '#020617',
-  border: '1px solid #1e293b',
-  borderRadius: '12px',
-  overflow: 'hidden',
-};
-
-const recentItem = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  padding: '14px 18px',
-  borderBottom: '1px solid #1e293b',
-};
-
-const recentId = { fontSize: '14px', fontWeight: '500', color: '#e2e8f0' };
-const recentFile = {
-  fontSize: '12px',
-  color: '#64748b',
-  marginLeft: '10px',
-};
-const recentStat = { fontSize: '13px', color: '#64748b' };
-
-const badgeStyle = (status) => {
-  const base = {
-    fontSize: '11px',
-    padding: '3px 10px',
-    borderRadius: '20px',
-    fontWeight: '500',
-  };
-  if (status === 'COMPLETADO') return { ...base, background: '#052e16', color: '#22c55e' };
-  if (status === 'ERROR') return { ...base, background: '#2b0a0a', color: '#ef4444' };
-  return { ...base, background: '#3b2f0a', color: '#f59e0b' };
-};
-
-const quickGrid = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-  gap: '14px',
-};
-
-const quickCard = {
-  background: '#020617',
-  border: '1px solid #1e293b',
-  borderRadius: '12px',
-  padding: '20px',
-  display: 'flex',
-  alignItems: 'flex-start',
-  gap: '14px',
-  cursor: 'pointer',
-  textAlign: 'left',
-  transition: 'border-color 0.2s ease',
-  width: '100%',
-};
-
-const quickIcon = { fontSize: '22px', marginTop: '2px' };
-const quickTitle = { fontSize: '14px', fontWeight: '600', color: '#e2e8f0', margin: 0 };
-const quickDesc = { fontSize: '12px', color: '#64748b', marginTop: '4px' };
-
-const emptyText = { color: '#475569', fontSize: '14px', padding: '12px 0' };
-
-const skeleton = (height) => ({
-  background: '#1e293b',
-  borderRadius: '6px',
-  height,
-  width: '100%',
-  animation: 'pulse 1.5s ease-in-out infinite',
-});

@@ -65,7 +65,11 @@ def seed_categories(db: Session):
     for name in _DEFAULT_CATEGORIES:
         if not db.query(CategoryModel).filter(CategoryModel.name == name).first():
             db.add(CategoryModel(name=name))
-    db.commit()
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
 
 
 def seed_books(db: Session):
@@ -85,7 +89,11 @@ def seed_books(db: Session):
             published_flag=True,
             enriched_flag=False,
         ))
-    db.commit()
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
 
 
 def create_book(db: Session, book: Book) -> Book:
@@ -111,10 +119,13 @@ def create_book(db: Session, book: Book) -> Book:
     db.add(m)
     try:
         db.commit()
+        db.refresh(m)
     except IntegrityError:
         db.rollback()
         raise ValueError(f"Ya existe un libro con el ISBN {book.isbn}")
-    db.refresh(m)
+    except Exception:
+        db.rollback()
+        raise
     return _book(m)
 
 
@@ -145,8 +156,12 @@ def update_book(db: Session, book_id: int, **kwargs) -> Optional[Book]:
     for k, v in kwargs.items():
         if hasattr(m, k):
             setattr(m, k, v)
-    db.commit()
-    db.refresh(m)
+    try:
+        db.commit()
+        db.refresh(m)
+    except Exception:
+        db.rollback()
+        raise
     return _book(m)
 
 
@@ -155,7 +170,11 @@ def delete_book(db: Session, book_id: int) -> bool:
     if not m:
         return False
     db.delete(m)
-    db.commit()
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
     return True
 
 
@@ -166,6 +185,10 @@ def get_all_categories(db: Session) -> List[Category]:
 def create_category(db: Session, name: str, description: str = None) -> Category:
     m = CategoryModel(name=name, description=description)
     db.add(m)
-    db.commit()
-    db.refresh(m)
+    try:
+        db.commit()
+        db.refresh(m)
+    except Exception:
+        db.rollback()
+        raise
     return _cat(m)

@@ -1,211 +1,91 @@
-:root {
-  /* =========================
-     🎨 COLORES BASE
-  ========================= */
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #ffffff;
-  --surface: #ffffff;
-  --border: #e5e4e7;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap');
 
-  /* =========================
-     🎯 COLORES FUNCIONALES
-  ========================= */
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
+@import "tailwindcss";
 
-  --success: #16a34a;
-  --warning: #f59e0b;
-  --danger: #dc2626;
+@theme {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Playfair Display', Georgia, serif;
 
-  /* =========================
-     🌟 ACCENT (tu color original)
-  ========================= */
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-
-  /* =========================
-     🧱 OTROS
-  ========================= */
-  --code-bg: #f4f3ec;
-  --social-bg: rgba(244, 243, 236, 0.5);
-
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px,
-    rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
-
-  --radius: 12px;
-
-  /* =========================
-     🔤 TIPOGRAFÍA
-  ========================= */
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+  --color-ink-50:  #f7f8fa;
+  --color-ink-100: #eeeef2;
+  --color-ink-200: #d9dae0;
+  --color-ink-300: #b8bac4;
+  --color-ink-400: #8f92a1;
+  --color-ink-500: #6b6e7e;
+  --color-ink-600: #525461;
+  --color-ink-700: #3d3f4a;
+  --color-ink-800: #2a2c35;
+  --color-ink-900: #16171d;
+  --color-ink-950: #0f1117;
 }
 
-/* =========================
-   🌙 MODO OSCURO
-========================= */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --surface: #1f2028;
-    --border: #2e303a;
-
-    --code-bg: #1f2028;
-
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-
-    --social-bg: rgba(47, 48, 58, 0.5);
-
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px,
-      rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+@utility shadow-card {
+  box-shadow: 0 1px 3px rgba(15, 17, 23, .06), 0 4px 12px rgba(15, 17, 23, .05);
 }
 
-/* =========================
-   📦 ROOT APP
-========================= */
-#root {
-  width: 100%;
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
+@utility shadow-pop {
+  box-shadow: 0 8px 24px rgba(15, 17, 23, .12), 0 2px 8px rgba(15, 17, 23, .08);
+}
+
+@utility grid-bg {
+  background-image:
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+@utility float-in {
+  animation: floatIn 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@utility scrollbar-clean {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-ink-200) transparent;
+}
+
+@utility num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+@utility pulse-ring {
+  animation: pulseRing 1.6s ease-in-out infinite;
+}
+
+@utility ai-shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(245,158,11,.12) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: aiShimmer 2s linear infinite;
+}
+
+@keyframes floatIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseRing {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(1.12); }
+}
+
+@keyframes aiShimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+*, *::before, *::after {
   box-sizing: border-box;
 }
 
-/* =========================
-   📄 BODY
-========================= */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
 body {
-  margin: 0;
-  background: #020617;
-  color: #e2e8f0;
-}
-
-/* =========================
-   🔤 HEADINGS
-========================= */
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 48px;
-  letter-spacing: -1.2px;
-  margin: 24px 0;
-
-  @media (max-width: 1024px) {
-    font-size: 32px;
-  }
-}
-
-h2 {
-  font-size: 22px;
-  margin: 0 0 8px;
-}
-
-/* =========================
-   📄 TEXTO
-========================= */
-p {
-  margin: 0;
-}
-
-/* =========================
-   💻 CODE
-========================= */
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 14px;
-  padding: 4px 8px;
-  background: var(--code-bg);
-}
-
-/* =========================
-   🔘 BOTONES BASE (IMPORTANTE)
-========================= */
-button {
-  font-family: var(--sans);
-  border-radius: var(--radius);
-  border: 1px solid transparent;
-  padding: 8px 14px;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* Variantes */
-.button-primary {
-  background: var(--primary);
-  color: white;
-}
-
-.button-primary:hover {
-  background: var(--primary-hover);
-}
-
-.button-secondary {
-  background: var(--surface);
-  border: 1px solid var(--border);
-}
-
-.button-secondary:hover {
-  background: #f9fafb;
-}
-
-/* =========================
-   🧱 UTILIDADES
-========================= */
-.container {
-  padding: 24px;
-}
-
-.card {
-  background: var(--surface);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  border: 1px solid var(--border);
-  padding: 16px;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--color-ink-50);
+  color: var(--color-ink-900);
 }

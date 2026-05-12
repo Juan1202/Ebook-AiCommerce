@@ -42,6 +42,10 @@ def create_user(db: Session, user: User) -> User:
         is_active=user.is_active,
     )
     db.add(model)
-    db.commit()
-    db.refresh(model)
+    try:
+        db.commit()
+        db.refresh(model)
+    except Exception:
+        db.rollback()
+        raise
     return _to_domain(model)

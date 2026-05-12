@@ -18,7 +18,13 @@ class HttpCatalogClient(CatalogClient):
         self._client = client
 
     async def get_book(self, book_id: str) -> Optional[CatalogBook]:
-        url = f"{self._base_url}/books/{book_id}"
+        try:
+            book_id_int = int(book_id)
+        except (ValueError, TypeError) as exc:
+            raise UpstreamServiceError(
+                "catalog-service", f"book_id '{book_id}' is not a valid integer"
+            ) from exc
+        url = f"{self._base_url}/books/{book_id_int}"
         try:
             if self._client is not None:
                 response = await self._client.get(url, timeout=self._timeout)
@@ -46,5 +52,6 @@ class HttpCatalogClient(CatalogClient):
             book_id=str(payload.get("id", book_id)),
             title=str(payload.get("title", "")),
             author=payload.get("author"),
+            isbn=payload.get("isbn"),
             is_published=bool(payload.get("published_flag", True)),
         )

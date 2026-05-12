@@ -5,7 +5,7 @@ import httpx
 
 from app.config import settings
 from app.domain.entities.enrichment import BookMetadata, EnrichmentSource
-from app.infrastructure.adapters.base_adapter import CircuitBreaker, SimpleCache
+from app.infrastructure.adapters.base_adapter import CircuitBreaker, SimpleCache, fetch_with_retry
 
 logger = logging.getLogger(__name__)
 
@@ -26,14 +26,13 @@ async def get_by_isbn(isbn: str) -> Optional[BookMetadata]:
 
     try:
         url = f"{settings.OPEN_LIBRARY_BASE_URL}/api/books"
+        params = {"bibkeys": f"ISBN:{isbn}", "format": "json", "jscmd": "data"}
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-            response = await client.get(url, params={
-                "bibkeys": f"ISBN:{isbn}",
-                "format": "json",
-                "jscmd": "data",
-            })
-            response.raise_for_status()
-            data = response.json()
+            async def _call() -> dict:
+                r = await client.get(url, params=params)
+                r.raise_for_status()
+                return r.json()
+            data = await fetch_with_retry(_call)
 
         book_data = data.get(f"ISBN:{isbn}")
         if not book_data:
@@ -62,10 +61,13 @@ async def search(query: str) -> list[BookMetadata]:
 
     try:
         url = f"{settings.OPEN_LIBRARY_BASE_URL}/search.json"
+        params = {"q": query, "limit": 5}
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-            response = await client.get(url, params={"q": query, "limit": 5})
-            response.raise_for_status()
-            data = response.json()
+            async def _call() -> dict:
+                r = await client.get(url, params=params)
+                r.raise_for_status()
+                return r.json()
+            data = await fetch_with_retry(_call)
 
         results = [_parse_search_doc(doc) for doc in data.get("docs", [])[:5]]
         _cache.set(cache_key, results)

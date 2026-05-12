@@ -1,7 +1,12 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
-from app.infrastructure.database import Base, engine
+from app.infrastructure.database import Base, engine, SessionLocal
+
+logger = logging.getLogger(__name__)
 from app.routers import batch_router, inventory_router
 
 Base.metadata.create_all(bind=engine)
@@ -26,4 +31,13 @@ app.include_router(batch_router.router, prefix="/batches", tags=["batches"])
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": "inventory-service"}
+    db_status = "disconnected"
+    db = SessionLocal()
+    try:
+        db.execute(text("SELECT 1"))
+        db_status = "connected"
+    except Exception as exc:
+        logger.warning("Health check DB probe failed: %s", exc)
+    finally:
+        db.close()
+    return {"status": "ok", "service": "inventory-service", "version": "1.0.0", "db": db_status}

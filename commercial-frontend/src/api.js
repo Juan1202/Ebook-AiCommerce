@@ -1,20 +1,20 @@
 import axios from 'axios'
 
-const BFF = import.meta.env.VITE_BFF_URL || 'http://localhost:8009'
+const BFF = import.meta.env.VITE_BFF_URL || 'http://localhost:8000'
 
 const http = axios.create({
   baseURL: BFF,
   timeout: 15000
 })
 
-export const PAGE_SIZE = 100000
+const FETCH_LIMIT = 500
 
 export async function getBooks(params = {}) {
   try {
-    const r = await http.get('/api/catalog/books/', {
+    const r = await http.get('/api/catalog/books', {
       params: {
         ...params,
-        limit: PAGE_SIZE
+        limit: FETCH_LIMIT
       }
     })
 
@@ -32,11 +32,11 @@ export async function getBooks(params = {}) {
 
 export async function searchBooks(q, params = {}) {
   try {
-    const r = await http.get('/api/catalog/books/', {
+    const r = await http.get('/api/catalog/books', {
       params: {
         ...params,
         q,
-        limit: PAGE_SIZE
+        limit: FETCH_LIMIT
       }
     })
 
@@ -65,7 +65,7 @@ export async function getBook(id) {
 
 export async function getCategories() {
   try {
-    const r = await http.get('/api/catalog/categories/')
+    const r = await http.get('/api/catalog/categories')
     return Array.isArray(r.data) ? r.data : []
   } catch (error) {
     console.error('Error cargando categorías:', error)

@@ -4,7 +4,8 @@ import { getBook, getCategories } from '../api'
 import EnrichedBookImage from './EnrichedBookImage'
 import PriceBadge from './PriceBadge'
 import AvailabilityBadge from './AvailabilityBadge'
-import { addToCart, getCart } from '../cart'
+import { useCartStore } from '../cart/cart.store'
+import RecommendedBooks from './RecommendedBooks'
 
 function getStock(book) {
   return book.stock ?? book.available_units ?? book.unidades_disponibles ?? book.units_available ?? null
@@ -21,7 +22,10 @@ export default function BookDetail() {
   const [book, setBook] = useState(null)
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
-  const [cartQuantity, setCartQuantity] = useState(0)
+
+  const addItem = useCartStore(s => s.addItem)
+  const cartItem = useCartStore(s => s.items.find(i => i.bookId === String(id)))
+  const cartQuantity = cartItem?.quantity || 0
 
   useEffect(() => {
     async function load() {
@@ -34,11 +38,6 @@ export default function BookDetail() {
 
       setBook(bookData)
       setCategories(categoriesData || [])
-
-      const currentCart = getCart()
-      const existing = currentCart.find(item => Number(item.id) === Number(id))
-      setCartQuantity(existing?.quantity || 0)
-
       setLoading(false)
     }
 
@@ -67,22 +66,25 @@ export default function BookDetail() {
     numericStock !== null && cartQuantity >= numericStock
 
   const handleAdd = () => {
-    addToCart({ ...book, stock: numericStock })
-
-    const currentCart = getCart()
-    const existing = currentCart.find(item => Number(item.id) === Number(book.id))
-    setCartQuantity(existing?.quantity || 0)
+    addItem({
+      bookId: String(book.id),
+      title: book.title,
+      quantity: 1,
+      unitPrice: book.suggested_price ?? book.price ?? 0,
+      coverUrl: book.cover_url,
+      isPriceFallback: book.is_fallback ?? false,
+    })
   }
 
   return (
     <main className="book-detail-page">
-      <button className="back-link" onClick={() => navigate('/')}>
+      <button className="book-detail-back" onClick={() => navigate('/')}>
         ← Volver al catálogo
       </button>
 
-      <section className="book-detail">
+      <section className="book-detail-grid">
         <div className="book-detail-cover">
-          <EnrichedBookImage book={book} height={390} borderRadius="12px" />
+          <EnrichedBookImage book={book} height="100%" />
         </div>
 
         <div className="book-detail-info">
@@ -90,9 +92,9 @@ export default function BookDetail() {
             {category?.name || 'Sin categoría'}
           </span>
 
-          <h1>{book.title}</h1>
+          <h1 className="book-detail-title">{book.title}</h1>
 
-          <p className="detail-author">
+          <p className="book-detail-author">
             por <strong>{book.author || 'Autor no disponible'}</strong>
           </p>
 
@@ -100,52 +102,52 @@ export default function BookDetail() {
 
           <div className="detail-meta">
             {book.publisher && (
-              <div>
-                <span>Editorial</span>
-                <strong>{book.publisher}</strong>
+              <div className="detail-meta__row">
+                <span className="detail-meta__label">Editorial</span>
+                <strong className="detail-meta__value">{book.publisher}</strong>
               </div>
             )}
 
             {book.publication_year && (
-              <div>
-                <span>Año</span>
-                <strong>{book.publication_year}</strong>
+              <div className="detail-meta__row">
+                <span className="detail-meta__label">Año</span>
+                <strong className="detail-meta__value">{book.publication_year}</strong>
               </div>
             )}
 
             {book.isbn && (
-              <div>
-                <span>ISBN</span>
-                <strong>{book.isbn}</strong>
+              <div className="detail-meta__row">
+                <span className="detail-meta__label">ISBN</span>
+                <strong className="detail-meta__value">{book.isbn}</strong>
               </div>
             )}
 
             {condition && (
-              <div>
-                <span>Estado</span>
-                <strong>{condition}</strong>
+              <div className="detail-meta__row">
+                <span className="detail-meta__label">Estado</span>
+                <strong className="detail-meta__value">{condition}</strong>
               </div>
             )}
 
-            <div>
-              <span>Disponibilidad</span>
+            <div className="detail-meta__row">
+              <span className="detail-meta__label">Disponibilidad</span>
               <AvailabilityBadge stock={stock} />
             </div>
 
             {cartQuantity > 0 && (
-              <div>
-                <span>En carrito</span>
-                <strong>{cartQuantity} unidad(es)</strong>
+              <div className="detail-meta__row">
+                <span className="detail-meta__label">En carrito</span>
+                <strong className="detail-meta__value">{cartQuantity} unidad(es)</strong>
               </div>
             )}
           </div>
 
-          <p className="book-description">
+          <p className="book-detail-description">
             {book.description || 'Libro enriquecido automáticamente desde fuentes bibliográficas externas.'}
           </p>
 
           <button
-            className="buy-button"
+            className="book-detail-buy-btn"
             disabled={!isAvailable || reachedStock}
             onClick={handleAdd}
           >
@@ -157,6 +159,11 @@ export default function BookDetail() {
           </button>
         </div>
       </section>
+
+      <RecommendedBooks
+        bookId={book.id}
+        onBookClick={(bookId) => navigate('/libro/' + bookId)}
+      />
     </main>
   )
 }

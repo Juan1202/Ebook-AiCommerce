@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     CACHE_TTL: int = 3600  # 1 hour
     CIRCUIT_BREAKER_FAILURE_THRESHOLD: int = 5
     CIRCUIT_BREAKER_RECOVERY_TIMEOUT: int = 60
-    MIN_PRICE_THRESHOLD: float = 5.0
+    MIN_PRICE_THRESHOLD: float = 1.0
     CONDITION_FACTORS: dict = {
         "NUEVO": 1.0,
         "BUENO": 0.75,

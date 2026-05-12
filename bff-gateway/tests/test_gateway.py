@@ -8,9 +8,9 @@ def test_health():
     r = client.get("/health")
     assert r.status_code == 200
     data = r.json()
-    assert data["status"] == "ok"
-    assert "routes" in data
-    assert "quality" in data["routes"]
+    assert data["status"] in ("ok", "degraded")
+    assert "services" in data
+    assert "quality" in data["services"]
 
 
 def test_unknown_service_returns_404():

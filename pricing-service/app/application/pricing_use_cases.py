@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from statistics import mean
 from typing import List, Optional, Dict, Any
 import logging
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class PricingService:
-    def __init__(self, use_mock: bool = True):
+    def __init__(self, use_mock: bool = False):
         self.adapter = MockEbayAdapter() if use_mock else EbayAdapter()
 
     async def calculate_price(
@@ -28,19 +28,20 @@ class PricingService:
         """Calculate suggested price for a book"""
 
         try:
-            # Get external references
             references = await self.adapter.get_book_prices(book_title, author)
-            source = "external"
-            base_price = self._calculate_base_price(references)
             references_used = len(references)
-
+            if references_used > 0:
+                source = "external"
+                base_price = self._calculate_base_price(references)
+            else:
+                source = "fallback"
+                base_price = self._fallback_base_price(book_title)
         except Exception as e:
-            logger.warning(f"External API failed: {e}. Using fallback.")
-            # Fallback to internal logic
+            logger.warning("External API failed: %s. Using fallback.", e)
             references = []
+            references_used = 0
             source = "fallback"
             base_price = self._fallback_base_price(book_title)
-            references_used = 0
 
         # Apply condition factor
         condition_factor = settings.CONDITION_FACTORS.get(condition.value, 1.0)
@@ -68,7 +69,7 @@ class PricingService:
             references_used=references_used,
             source=source,
             explanation=explanation,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
             references=references
         )
 
@@ -77,10 +78,7 @@ class PricingService:
         return saved_decision
 
     def _calculate_base_price(self, references: List[PricingReference]) -> float:
-        """Calculate base price from references using median or mean"""
-        if not references:
-            return 10.0  # Default fallback
-
+        """Calculate base price from external references using median to avoid outliers."""
         prices = [ref.price for ref in references]
         # Use median to avoid outliers
         sorted_prices = sorted(prices)

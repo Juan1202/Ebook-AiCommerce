@@ -128,46 +128,56 @@ const EnrichmentPage = () => {
         <div className={styles.results}>
           <div className={styles.kpiRow}>
             <div className={`${styles.kpi} ${styles.kpiGreen}`}>
-              <span className={styles.kpiNum}>{result.inserted?.length ?? 0}</span>
+              <span className={styles.kpiNum}>{result.inserted ?? 0}</span>
               <span className={styles.kpiLabel}>Insertados</span>
             </div>
             <div className={`${styles.kpi} ${styles.kpiYellow}`}>
-              <span className={styles.kpiNum}>{result.duplicated?.length ?? 0}</span>
+              <span className={styles.kpiNum}>{result.duplicated ?? 0}</span>
               <span className={styles.kpiLabel}>Duplicados</span>
             </div>
             <div className={`${styles.kpi} ${styles.kpiRed}`}>
-              <span className={styles.kpiNum}>{result.errors?.length ?? 0}</span>
+              <span className={styles.kpiNum}>{result.errors ?? 0}</span>
               <span className={styles.kpiLabel}>Errores</span>
             </div>
             <div className={`${styles.kpi} ${styles.kpiBlue}`}>
-              <span className={styles.kpiNum}>{result.total ?? 0}</span>
+              <span className={styles.kpiNum}>{result.total_rows_processed ?? 0}</span>
               <span className={styles.kpiLabel}>Total filas</span>
             </div>
           </div>
 
-          {result.inserted?.length > 0 && (
+          {result.inserted > 0 && (
             <div className={styles.table}>
-              <h4 className={styles.tableTitle}>✅ Libros insertados ({result.inserted.length})</h4>
+              <h4 className={styles.tableTitle}>✅ Libros insertados ({result.inserted})</h4>
               <ul className={styles.list}>
-                {result.inserted.map((item, i) => <li key={i} className={styles.listItemGreen}>{item}</li>)}
+                {result.inserted_preview.map((item, i) => (
+                  <li key={i} className={styles.listItemGreen}>{item.title}</li>
+                ))}
               </ul>
             </div>
           )}
 
-          {result.duplicated?.length > 0 && (
+          {result.duplicated > 0 && (
             <div className={styles.table}>
-              <h4 className={styles.tableTitle}>⚠️ Duplicados ({result.duplicated.length})</h4>
+              <h4 className={styles.tableTitle}>⚠️ Duplicados ({result.duplicated})</h4>
               <ul className={styles.list}>
-                {result.duplicated.map((item, i) => <li key={i} className={styles.listItemYellow}>{item}</li>)}
+                {result.duplicated_preview.map((item, i) => (
+                  <li key={i} className={styles.listItemYellow}>{item.title}</li>
+                ))}
               </ul>
             </div>
           )}
 
-          {result.errors?.length > 0 && (
+          {result.errors > 0 && (
             <div className={styles.table}>
-              <h4 className={styles.tableTitle}>❌ Errores ({result.errors.length})</h4>
+              <h4 className={styles.tableTitle}>❌ Errores ({result.errors})</h4>
               <ul className={styles.list}>
-                {result.errors.map((item, i) => <li key={i} className={styles.listItemRed}>{item}</li>)}
+                {result.error_preview.map((item, i) => (
+                  <li key={i} className={styles.listItemRed}>
+                    {item.title ?? item.isbn ?? `Fila ${item.row}`}
+                    {" — "}
+                    {typeof item.error === "string" ? item.error : JSON.stringify(item.error)}
+                  </li>
+                ))}
               </ul>
             </div>
           )}

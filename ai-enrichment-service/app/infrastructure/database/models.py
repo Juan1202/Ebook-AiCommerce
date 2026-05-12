@@ -1,7 +1,7 @@
 import datetime
 import enum
 
-from sqlalchemy import Column, DateTime, Enum as SAEnum, Float, Integer, String, Text
+from sqlalchemy import Column, DateTime, Enum as SAEnum, Float, Integer, JSON, String, Text
 
 from app.infrastructure.database.connection import Base
 
@@ -23,7 +23,7 @@ class EnrichmentRequestModel(Base):
     author = Column(String(300), nullable=True)
     publisher = Column(String(300), nullable=True)
     status = Column(SAEnum(EnrichmentStatusDB), default=EnrichmentStatusDB.pending)
-    requested_at = Column(DateTime, default=datetime.datetime.utcnow)
+    requested_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
     source_used = Column(String(50), nullable=True)
     error_message = Column(Text, nullable=True)
 
@@ -39,4 +39,5 @@ class EnrichmentResultModel(Base):
     normalized_description = Column(Text, nullable=True)
     cover_url = Column(String(1000), nullable=True)
     confidence_score = Column(Float, default=0.0)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    metadata_json = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
