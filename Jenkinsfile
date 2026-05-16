@@ -32,7 +32,7 @@ pipeline {
                 stage('auth-service') {
                     steps {
                         dir('auth-service') {
-                            sh 'pip install -q -r requirements.txt'
+                            sh 'pip install -q --break-system-packages -r requirements.txt'
                             sh 'pytest tests/ -v --tb=short --junitxml=results-auth.xml'
                         }
                     }
@@ -46,7 +46,7 @@ pipeline {
                 stage('inventory-service') {
                     steps {
                         dir('inventory-service') {
-                            sh 'pip install -q -r requirements.txt'
+                            sh 'pip install -q --break-system-packages -r requirements.txt'
                             sh 'pytest tests/ -v --tb=short --junitxml=results-inventory.xml'
                         }
                     }
@@ -60,7 +60,7 @@ pipeline {
                 stage('pricing-service') {
                     steps {
                         dir('pricing-service') {
-                            sh 'pip install -q -r requirements.txt'
+                            sh 'pip install -q --break-system-packages -r requirements.txt'
                             sh 'pytest tests/ -v --tb=short --junitxml=results-pricing.xml'
                         }
                     }
@@ -74,7 +74,7 @@ pipeline {
                 stage('order-service') {
                     steps {
                         dir('order-service') {
-                            sh 'pip install -q -r requirements.txt'
+                            sh 'pip install -q --break-system-packages -r requirements.txt'
                             sh 'pytest tests/ -v --tb=short --junitxml=results-order.xml'
                         }
                     }
@@ -88,7 +88,7 @@ pipeline {
                 stage('ai-enrichment-service') {
                     steps {
                         dir('ai-enrichment-service') {
-                            sh 'pip install -q -r requirements.txt'
+                            sh 'pip install -q --break-system-packages -r requirements.txt'
                             sh 'pytest tests/ -v --tb=short --junitxml=results-enrichment.xml'
                         }
                     }
@@ -102,7 +102,7 @@ pipeline {
                 stage('ai-assistant-service') {
                     steps {
                         dir('ai-assistant-service') {
-                            sh 'pip install -q -r requirements.txt'
+                            sh 'pip install -q --break-system-packages -r requirements.txt'
                             sh 'pytest tests/ -v --tb=short --junitxml=results-assistant.xml'
                         }
                     }
@@ -116,7 +116,7 @@ pipeline {
                 stage('bff-gateway') {
                     steps {
                         dir('bff-gateway') {
-                            sh 'pip install -q -r requirements.txt'
+                            sh 'pip install -q --break-system-packages -r requirements.txt'
                             sh 'pytest tests/ -v --tb=short --junitxml=results-bff.xml'
                         }
                     }
@@ -147,7 +147,7 @@ pipeline {
                 sh 'docker compose up -d'
                 sh 'sleep 20'
                 sh '''
-                    pip install -q httpx
+                    pip install -q --break-system-packages httpx
                     python e2e_flow_test.py
                 '''
             }
@@ -160,7 +160,7 @@ pipeline {
     // ─────────────────────────────────────────
     post {
         always {
-            sh 'docker compose down -v --remove-orphans || true'
+            sh 'docker compose down -v || true'
         }
         failure {
             echo "Pipeline falló — revisar logs arriba."
