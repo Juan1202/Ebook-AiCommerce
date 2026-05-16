@@ -7,7 +7,6 @@ pipeline {
         PYTHONDONTWRITEBYTECODE = '1'
         TOOLS_DIR               = '/tmp/bookflow-ci-tools'
         GITLEAKS_VERSION        = '8.21.2'
-        KICS_VERSION            = '2.1.3'
     }
 
     options {
@@ -176,33 +175,27 @@ pipeline {
                     }
                 }
 
-                // ── KICS ──────────────────────────
-                stage('KICS — IaC Security') {
+                // ── Checkov ───────────────────────
+                stage('Checkov — IaC Security') {
                     steps {
                         sh '''
-                            mkdir -p reports ${TOOLS_DIR}
+                            mkdir -p reports
 
-                            # Descargar binario si no está en caché
-                            if [ ! -f "${TOOLS_DIR}/kics" ]; then
-                                echo "[KICS] Descargando v${KICS_VERSION}..."
-                                curl -sSL \
-                                  "https://github.com/Checkmarx/kics/releases/download/v${KICS_VERSION}/kics_${KICS_VERSION}_linux_amd64.tar.gz" \
-                                  -o /tmp/kics.tar.gz
-                                tar -xzf /tmp/kics.tar.gz -C ${TOOLS_DIR}
-                                chmod +x ${TOOLS_DIR}/kics
-                                rm /tmp/kics.tar.gz
-                            fi
+                            echo "[Checkov] Instalando..."
+                            pip install -q --break-system-packages checkov
 
-                            echo "[KICS] Ejecutando escaneo IaC..."
-                            ${TOOLS_DIR}/kics scan \
-                                --path . \
-                                --report-formats html \
-                                --output-path reports \
-                                --output-name kics \
-                                --ignore-on-exit results \
+                            echo "[Checkov] Escaneando IaC (Dockerfiles, docker-compose, etc.)..."
+                            python3 -m checkov \
+                                --directory . \
+                                --output json \
+                                --output-file-path reports \
+                                --quiet \
+                                --soft-fail \
                                 || true
 
-                            echo "[KICS] Reporte generado en reports/kics.html"
+                            # checkov genera reports/results_json.json
+                            echo "[Checkov] Generando reporte HTML..."
+                            python3 ci/checkov_to_html.py reports/results_json.json reports/checkov.html
                         '''
                     }
                 }
@@ -250,7 +243,7 @@ pipeline {
                     alwaysLinkToLastBuild: true,
                     keepAll              : true,
                     reportDir            : 'reports',
-                    reportFiles          : 'gitleaks.html,kics.html,semgrep.html',
+                    reportFiles          : 'gitleaks.html,checkov.html,semgrep.html',
                     reportName           : 'Security Reports — BookFlow'
                 ])
             }
