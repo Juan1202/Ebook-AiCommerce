@@ -33,12 +33,12 @@ pipeline {
                     steps {
                         dir('auth-service') {
                             sh 'pip install -q --break-system-packages -r requirements.txt'
-                            sh 'pytest tests/ -v --tb=short --junitxml=results-auth.xml'
+                            sh 'python3 -m pytest tests/ -v --tb=short --junitxml=results-auth.xml'
                         }
                     }
                     post {
                         always {
-                            junit 'auth-service/results-auth.xml'
+                            junit allowEmptyResults: true, testResults: 'auth-service/results-auth.xml'
                         }
                     }
                 }
@@ -47,12 +47,12 @@ pipeline {
                     steps {
                         dir('inventory-service') {
                             sh 'pip install -q --break-system-packages -r requirements.txt'
-                            sh 'pytest tests/ -v --tb=short --junitxml=results-inventory.xml'
+                            sh 'python3 -m pytest tests/ -v --tb=short --junitxml=results-inventory.xml'
                         }
                     }
                     post {
                         always {
-                            junit 'inventory-service/results-inventory.xml'
+                            junit allowEmptyResults: true, testResults: 'inventory-service/results-inventory.xml'
                         }
                     }
                 }
@@ -61,12 +61,12 @@ pipeline {
                     steps {
                         dir('pricing-service') {
                             sh 'pip install -q --break-system-packages -r requirements.txt'
-                            sh 'pytest tests/ -v --tb=short --junitxml=results-pricing.xml'
+                            sh 'python3 -m pytest tests/ -v --tb=short --junitxml=results-pricing.xml'
                         }
                     }
                     post {
                         always {
-                            junit 'pricing-service/results-pricing.xml'
+                            junit allowEmptyResults: true, testResults: 'pricing-service/results-pricing.xml'
                         }
                     }
                 }
@@ -75,12 +75,12 @@ pipeline {
                     steps {
                         dir('order-service') {
                             sh 'pip install -q --break-system-packages -r requirements.txt'
-                            sh 'pytest tests/ -v --tb=short --junitxml=results-order.xml'
+                            sh 'python3 -m pytest tests/ -v --tb=short --junitxml=results-order.xml'
                         }
                     }
                     post {
                         always {
-                            junit 'order-service/results-order.xml'
+                            junit allowEmptyResults: true, testResults: 'order-service/results-order.xml'
                         }
                     }
                 }
@@ -89,12 +89,12 @@ pipeline {
                     steps {
                         dir('ai-enrichment-service') {
                             sh 'pip install -q --break-system-packages -r requirements.txt'
-                            sh 'pytest tests/ -v --tb=short --junitxml=results-enrichment.xml'
+                            sh 'python3 -m pytest tests/ -v --tb=short --junitxml=results-enrichment.xml'
                         }
                     }
                     post {
                         always {
-                            junit 'ai-enrichment-service/results-enrichment.xml'
+                            junit allowEmptyResults: true, testResults: 'ai-enrichment-service/results-enrichment.xml'
                         }
                     }
                 }
@@ -103,12 +103,12 @@ pipeline {
                     steps {
                         dir('ai-assistant-service') {
                             sh 'pip install -q --break-system-packages -r requirements.txt'
-                            sh 'pytest tests/ -v --tb=short --junitxml=results-assistant.xml'
+                            sh 'python3 -m pytest tests/ -v --tb=short --junitxml=results-assistant.xml'
                         }
                     }
                     post {
                         always {
-                            junit 'ai-assistant-service/results-assistant.xml'
+                            junit allowEmptyResults: true, testResults: 'ai-assistant-service/results-assistant.xml'
                         }
                     }
                 }
@@ -117,19 +117,19 @@ pipeline {
                     steps {
                         dir('bff-gateway') {
                             sh 'pip install -q --break-system-packages -r requirements.txt'
-                            sh 'pytest tests/ -v --tb=short --junitxml=results-bff.xml'
+                            sh 'python3 -m pytest tests/ -v --tb=short --junitxml=results-bff.xml'
                         }
                     }
                     post {
                         always {
-                            junit 'bff-gateway/results-bff.xml'
+                            junit allowEmptyResults: true, testResults: 'bff-gateway/results-bff.xml'
                         }
                     }
                 }
 
             }
         }
-        
+
         // ─────────────────────────────────────────
         // STAGE 3 — Build imágenes Docker
         // ─────────────────────────────────────────
@@ -148,7 +148,7 @@ pipeline {
                 sh 'sleep 20'
                 sh '''
                     pip install -q --break-system-packages httpx
-                    python e2e_flow_test.py
+                    python3 e2e_flow_test.py
                 '''
             }
         }
