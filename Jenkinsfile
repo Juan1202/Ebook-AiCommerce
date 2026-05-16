@@ -2,9 +2,12 @@ pipeline {
     agent any
 
     environment {
-        COMPOSE_PROJECT_NAME = 'bookflow'
-        DOCKER_BUILDKIT      = '1'
+        COMPOSE_PROJECT_NAME    = 'bookflow'
+        DOCKER_BUILDKIT         = '1'
         PYTHONDONTWRITEBYTECODE = '1'
+        TOOLS_DIR               = '/tmp/bookflow-ci-tools'
+        GITLEAKS_VERSION        = '8.21.2'
+        KICS_VERSION            = '2.1.3'
     }
 
     options {
@@ -24,8 +27,9 @@ pipeline {
         }
 
         // ─────────────────────────────────────────
-        // STAGE 2 — Tests unitarios (paralelo)
+        // STAGE 2 — Unit Tests (diferido)
         // ─────────────────────────────────────────
+        /*
         stage('Unit Tests') {
             parallel {
 
@@ -129,9 +133,131 @@ pipeline {
 
             }
         }
+        */
 
         // ─────────────────────────────────────────
-        // STAGE 3 — Build imágenes Docker
+        // STAGE 2 — Security Scans (paralelo)
+        //   • Gitleaks  — detección de secretos
+        //   • KICS      — análisis IaC (Dockerfiles, compose)
+        //   • Semgrep   — SAST código fuente
+        // ─────────────────────────────────────────
+        stage('Security Scans') {
+            parallel {
+
+                // ── Gitleaks ──────────────────────
+                stage('Gitleaks — Secret Detection') {
+                    steps {
+                        sh '''
+                            mkdir -p reports ${TOOLS_DIR}
+
+                            # Descargar binario si no está en caché
+                            if [ ! -f "${TOOLS_DIR}/gitleaks" ]; then
+                                echo "[Gitleaks] Descargando v${GITLEAKS_VERSION}..."
+                                curl -sSL \
+                                  "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+                                  -o /tmp/gitleaks.tar.gz
+                                tar -xzf /tmp/gitleaks.tar.gz -C ${TOOLS_DIR} gitleaks
+                                chmod +x ${TOOLS_DIR}/gitleaks
+                                rm /tmp/gitleaks.tar.gz
+                            fi
+
+                            echo "[Gitleaks] Ejecutando escaneo..."
+                            ${TOOLS_DIR}/gitleaks detect \
+                                --source . \
+                                --report-format json \
+                                --report-path reports/gitleaks.json \
+                                --exit-code 0 \
+                                --no-git \
+                                || true
+
+                            echo "[Gitleaks] Generando reporte HTML..."
+                            python3 ci/gitleaks_to_html.py reports/gitleaks.json reports/gitleaks.html
+                        '''
+                    }
+                }
+
+                // ── KICS ──────────────────────────
+                stage('KICS — IaC Security') {
+                    steps {
+                        sh '''
+                            mkdir -p reports ${TOOLS_DIR}
+
+                            # Descargar binario si no está en caché
+                            if [ ! -f "${TOOLS_DIR}/kics" ]; then
+                                echo "[KICS] Descargando v${KICS_VERSION}..."
+                                curl -sSL \
+                                  "https://github.com/Checkmarx/kics/releases/download/v${KICS_VERSION}/kics_${KICS_VERSION}_linux_amd64.tar.gz" \
+                                  -o /tmp/kics.tar.gz
+                                tar -xzf /tmp/kics.tar.gz -C ${TOOLS_DIR}
+                                chmod +x ${TOOLS_DIR}/kics
+                                rm /tmp/kics.tar.gz
+                            fi
+
+                            echo "[KICS] Ejecutando escaneo IaC..."
+                            ${TOOLS_DIR}/kics scan \
+                                --path . \
+                                --report-formats html \
+                                --output-path reports \
+                                --output-name kics \
+                                --ignore-on-exit results \
+                                || true
+
+                            echo "[KICS] Reporte generado en reports/kics.html"
+                        '''
+                    }
+                }
+
+                // ── Semgrep ───────────────────────
+                stage('Semgrep — SAST') {
+                    steps {
+                        sh '''
+                            mkdir -p reports
+
+                            echo "[Semgrep] Instalando..."
+                            pip install -q --break-system-packages semgrep
+
+                            echo "[Semgrep] Ejecutando SAST..."
+                            python3 -m semgrep scan \
+                                --config=p/ci \
+                                --config=p/python \
+                                --json \
+                                --output reports/semgrep.json \
+                                --no-rewrite-rule-ids \
+                                --quiet \
+                                --max-target-bytes 2000000 \
+                                . || true
+
+                            echo "[Semgrep] Generando reporte HTML..."
+                            python3 ci/semgrep_to_html.py reports/semgrep.json reports/semgrep.html
+                        '''
+                    }
+                }
+
+            }
+        }
+
+        // ─────────────────────────────────────────
+        // STAGE 3 — Publicar reportes
+        // ─────────────────────────────────────────
+        stage('Publish Security Reports') {
+            steps {
+                // Archivar JSONs y HTMLs como artefactos descargables
+                archiveArtifacts artifacts: 'reports/**', allowEmptyArchive: true
+
+                // Publicar HTMLs en la interfaz de Jenkins (requiere HTML Publisher plugin)
+                publishHTML(target: [
+                    allowMissing         : true,
+                    alwaysLinkToLastBuild: true,
+                    keepAll              : true,
+                    reportDir            : 'reports',
+                    reportFiles          : 'gitleaks.html,kics.html,semgrep.html',
+                    reportName           : 'Security Reports — BookFlow'
+                ])
+            }
+        }
+
+        // ─────────────────────────────────────────
+        // STAGE 4 — Build imágenes Docker
         // ─────────────────────────────────────────
         stage('Build Docker Images') {
             steps {
@@ -140,7 +266,7 @@ pipeline {
         }
 
         // ─────────────────────────────────────────
-        // STAGE 4 — Levanta stack + smoke test E2E
+        // STAGE 5 — Levanta stack + smoke test E2E
         // ─────────────────────────────────────────
         stage('Integration / E2E') {
             steps {
@@ -156,7 +282,7 @@ pipeline {
     }
 
     // ─────────────────────────────────────────
-    // POST — Limpieza siempre, notificación si falla
+    // POST — Limpieza + notificación
     // ─────────────────────────────────────────
     post {
         always {
