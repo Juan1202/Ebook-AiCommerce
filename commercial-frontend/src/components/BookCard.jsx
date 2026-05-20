@@ -12,16 +12,23 @@ const CONDITION_CLASSES = {
 }
 
 function getStock(book) {
-  return book.stock ?? book.available_units ?? book.unidades_disponibles ?? book.units_available ?? null
+  return book.stock ?? book.quantity_available ?? book.available_units ?? book.unidades_disponibles ?? book.units_available ?? null
 }
 
 function getCondition(book) {
   return book.condition ?? book.estado ?? book.estado_libro ?? book.book_condition ?? null
 }
 
+function formatPrice(price) {
+  if (price === null || price === undefined) return 'Precio a consultar'
+  const val = Math.round(Number(price))
+  return '$ ' + val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+}
+
 export default function BookCard({ book, categories }) {
   const navigate = useNavigate()
   const [liked, setLiked] = useState(false)
+  const [addedSuccessfully, setAddedSuccessfully] = useState(false)
 
   const items = useCartStore(s => s.items) || []
   const addItem = useCartStore(s => s.addItem)
@@ -41,10 +48,11 @@ export default function BookCard({ book, categories }) {
   const category = categories?.find(c => Number(c.id) === Number(book.category_id))
 
   const inStock =
-    stock === null ||
-    stock === undefined ||
-    stock === '' ||
-    Number(stock) > 0
+    (stock === null ||
+      stock === undefined ||
+      stock === '' ||
+      Number(stock) > 0) &&
+    Number(price) > 0
 
   function handleCart(e) {
     e.stopPropagation()
@@ -52,7 +60,22 @@ export default function BookCard({ book, categories }) {
     if (inCart) {
       removeItem(bookIdStr)
     } else {
-      addItem({ bookId: bookIdStr, ...book, unitPrice: book.price ?? book.suggested_price ?? 0, quantity: 1 })
+      addItem({
+        bookId: bookIdStr,
+        ...book,
+        unitPrice: book.price ?? book.suggested_price ?? 0,
+        quantity: 1,
+        coverUrl: book.cover_url,
+      })
+      setAddedSuccessfully(true)
+
+      setTimeout(() => {
+        window.dispatchEvent(new Event('open-cart'))
+      }, 300)
+
+      setTimeout(() => {
+        setAddedSuccessfully(false)
+      }, 2000)
     }
   }
 
@@ -68,7 +91,7 @@ export default function BookCard({ book, categories }) {
       style={{ cursor: inStock ? 'pointer' : 'default', opacity: inStock ? 1 : 0.6 }}
     >
       <div className="book-card-cover">
-        <EnrichedBookImage book={book} height="100%" borderRadius="0" />
+        <EnrichedBookImage book={book} height="100%" borderRadius="16px 16px 0 0" />
 
         {category && (
           <span className="book-card-cat">{category.name}</span>
@@ -108,7 +131,9 @@ export default function BookCard({ book, categories }) {
       <div className="book-card-footer">
         <div className="book-card-price-wrap">
           {price !== null && price !== undefined ? (
-            <span className="book-card-price">${Number(price).toFixed(2)}</span>
+            <span className="book-card-price">
+              {formatPrice(price)}
+            </span>
           ) : (
             <span className="book-card-price-na">Precio a consultar</span>
           )}
@@ -124,8 +149,14 @@ export default function BookCard({ book, categories }) {
           onClick={handleCart}
           disabled={!inStock}
           aria-label={inCart ? 'Quitar del carrito' : 'Agregar al carrito'}
+          style={{
+            backgroundColor: addedSuccessfully ? '#10b981' : undefined,
+            borderColor: addedSuccessfully ? '#10b981' : undefined,
+            transform: addedSuccessfully ? 'scale(1.2)' : undefined,
+            transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+          }}
         >
-          {inCart ? <Check size={16} /> : <ShoppingCart size={16} />}
+          {addedSuccessfully || inCart ? <Check size={16} style={{ color: '#fff' }} /> : <ShoppingCart size={16} />}
         </button>
       </div>
     </div>

@@ -8,7 +8,7 @@ import { useCartStore } from '../cart/cart.store'
 import RecommendedBooks from './RecommendedBooks'
 
 function getStock(book) {
-  return book.stock ?? book.available_units ?? book.unidades_disponibles ?? book.units_available ?? null
+  return book.stock ?? book.quantity_available ?? book.available_units ?? book.unidades_disponibles ?? book.units_available ?? null
 }
 
 function getCondition(book) {
@@ -22,6 +22,7 @@ export default function BookDetail() {
   const [book, setBook] = useState(null)
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
+  const [addedSuccessfully, setAddedSuccessfully] = useState(false)
 
   const addItem = useCartStore(s => s.addItem)
   const cartItem = useCartStore(s => s.items.find(i => i.bookId === String(id)))
@@ -66,6 +67,8 @@ export default function BookDetail() {
     numericStock !== null && cartQuantity >= numericStock
 
   const handleAdd = () => {
+    if (reachedStock) return
+
     addItem({
       bookId: String(book.id),
       title: book.title,
@@ -74,6 +77,16 @@ export default function BookDetail() {
       coverUrl: book.cover_url,
       isPriceFallback: book.is_fallback ?? false,
     })
+
+    setAddedSuccessfully(true)
+
+    setTimeout(() => {
+      window.dispatchEvent(new Event('open-cart'))
+    }, 500)
+
+    setTimeout(() => {
+      setAddedSuccessfully(false)
+    }, 2500)
   }
 
   return (
@@ -148,14 +161,28 @@ export default function BookDetail() {
 
           <button
             className="book-detail-buy-btn"
-            disabled={!isAvailable || reachedStock}
+            disabled={(!isAvailable || reachedStock) && !addedSuccessfully}
             onClick={handleAdd}
+            style={{
+              background: addedSuccessfully
+                ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                : undefined,
+              boxShadow: addedSuccessfully
+                ? '0 0 20px rgba(16, 185, 129, 0.4)'
+                : undefined,
+              transform: addedSuccessfully ? 'scale(1.03)' : undefined,
+              borderColor: addedSuccessfully ? '#10b981' : undefined,
+              color: addedSuccessfully ? '#ffffff' : undefined,
+              transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+            }}
           >
-            {!isAvailable
-              ? 'Agotado'
-              : reachedStock
-                ? 'Stock máximo en carrito'
-                : 'Agregar al carrito 🛒'}
+            {addedSuccessfully
+              ? '🎉 ¡Agregado con éxito!'
+              : !isAvailable
+                ? 'Agotado'
+                : reachedStock
+                  ? 'Stock máximo en carrito'
+                  : 'Agregar al carrito 🛒'}
           </button>
         </div>
       </section>

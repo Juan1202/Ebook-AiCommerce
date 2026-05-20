@@ -62,10 +62,21 @@ export default function LoginModal({ onClose }) {
   const handleRegister = async (e) => {
     e.preventDefault();
     setError('');
-    if (password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres.');
+    
+    // Validacion basica de correo electronico
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      setError('Ingresa un correo electrónico válido (ej: tu@correo.com).');
       return;
     }
+
+    // Validacion avanzada de contraseña
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
+    if (!passwordRegex.test(password)) {
+      setError('La contraseña debe tener mínimo 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial.');
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch(`${BFF}/api/auth/register`, {
@@ -253,7 +264,7 @@ export default function LoginModal({ onClose }) {
               <div style={{ marginBottom: 14 }}>
                 <label style={labelStyle}>Correo electrónico</label>
                 <input
-                  type="email"
+                  type="text"
                   placeholder="tu@correo.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -267,11 +278,11 @@ export default function LoginModal({ onClose }) {
                 <div style={{ position: 'relative' }}>
                   <input
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Mínimo 6 caracteres"
+                    placeholder="Mínimo 8 caracteres, letras, números y símbolos"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    minLength={6}
+                    minLength={8}
                     autoComplete="new-password"
                     style={{ ...inputStyle, paddingRight: 44 }}
                   />
@@ -288,9 +299,9 @@ export default function LoginModal({ onClose }) {
                     {showPassword ? '🙈' : '👁️'}
                   </button>
                 </div>
-                {password.length > 0 && password.length < 6 && (
+                {password.length > 0 && password.length < 8 && (
                   <span style={{ ...hintStyle, color: '#f59e0b' }}>
-                    Faltan {6 - password.length} caracteres más
+                    Faltan {8 - password.length} caracteres más
                   </span>
                 )}
               </div>
@@ -299,8 +310,8 @@ export default function LoginModal({ onClose }) {
 
               <button
                 type="submit"
-                disabled={loading || !username.trim() || !email.trim() || password.length < 6}
-                style={btnPrimary(loading || password.length < 6)}
+                disabled={loading || !username.trim() || !email.trim() || password.length < 8}
+                style={btnPrimary(loading || password.length < 8)}
               >
                 {loading ? 'Creando cuenta...' : 'Crear cuenta gratis'}
               </button>
