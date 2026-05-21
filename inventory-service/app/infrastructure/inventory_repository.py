@@ -109,6 +109,31 @@ def get_items_by_batch(db: Session, batch_id: int) -> List[InventoryItem]:
         InventoryItemModel.import_batch_id == batch_id).all()]
 
 
+def reserve_item(db: Session, book_id: int | None = None,
+                 book_reference: str | None = None,
+                 quantity: int = 1):
+    query = db.query(InventoryItemModel)
+    if book_id is not None:
+        query = query.filter(InventoryItemModel.id == book_id)
+    elif book_reference is not None:
+        query = query.filter(InventoryItemModel.book_reference == book_reference)
+    else:
+        raise ValueError("Se requiere book_id o book_reference para realizar la reserva")
+
+    item = query.first()
+    if not item:
+        return False, "Item no encontrado en inventario"
+
+    if item.quantity_available < quantity:
+        return False, "Stock insuficiente para la reserva"
+
+    item.quantity_available -= quantity
+    item.quantity_reserved += quantity
+    db.commit()
+    db.refresh(item)
+    return True, item
+
+
 def check_availability(db: Session, book_reference: str) -> int:
     result = db.query(func.sum(InventoryItemModel.quantity_available)).filter(
         InventoryItemModel.book_reference == book_reference

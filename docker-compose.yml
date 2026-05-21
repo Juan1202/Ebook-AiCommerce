@@ -14,6 +14,8 @@ volumes:
   config-db-data:
   pricing-db-data:
   enrichment-db-data:
+  cart-db-data:
+  order-db-data:
 
 services:
 
@@ -92,6 +94,38 @@ services:
       POSTGRES_DB: ${DB_NAME_PRICING}
     volumes:
       - pricing-db-data:/var/lib/postgresql/data
+    networks:
+      - bookflow-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  cart-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${DB_NAME_CART}
+    volumes:
+      - cart-db-data:/var/lib/postgresql/data
+    networks:
+      - bookflow-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  order-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${DB_NAME_ORDER}
+    volumes:
+      - order-db-data:/var/lib/postgresql/data
     networks:
       - bookflow-network
     healthcheck:
@@ -207,6 +241,38 @@ services:
       - bookflow-network
     restart: always
 
+  cart-service:
+    build: ./cart-service
+    ports:
+      - "8010:8010"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@cart-db:5432/${DB_NAME_CART:-cart_db}
+    depends_on:
+      cart-db:
+        condition: service_healthy
+    networks:
+      - bookflow-network
+    restart: always
+
+  order-service:
+    build: ./order-service
+    ports:
+      - "8011:8011"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@order-db:5432/${DB_NAME_ORDER:-order_db}
+      CART_SERVICE_URL: http://cart-service:8010
+      INVENTORY_SERVICE_URL: http://inventory-service:8002
+    depends_on:
+      order-db:
+        condition: service_healthy
+      cart-service:
+        condition: service_started
+      inventory-service:
+        condition: service_started
+    networks:
+      - bookflow-network
+    restart: always
+
   data-quality-module:
     build: ./data-quality-module
     ports:
@@ -243,6 +309,8 @@ services:
       AI_ENRICHMENT_URL: http://ai-enrichment-mock:8006
       ENRICHMENT_SERVICE_URL: http://ai-enrichment-service:8004
       PRICING_SERVICE_URL: http://pricing-service:8005
+      CART_SERVICE_URL: http://cart-service:8010
+      ORDER_SERVICE_URL: http://order-service:8011
       DATA_QUALITY_URL: http://data-quality-module:8007
       CONFIG_MODULE_URL: http://config-module:8008
     depends_on:
@@ -252,6 +320,8 @@ services:
       - ai-enrichment-mock
       - ai-enrichment-service
       - pricing-service
+      - cart-service
+      - order-service
       - data-quality-module
       - config-module
     networks:
