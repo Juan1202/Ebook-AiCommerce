@@ -89,7 +89,7 @@ export default function IAPicks() {
         {!loading && !error && (
           <>
             <p className="ia-picks-count">{picks.length} recomendaciones</p>
-            <div className="books-grid">
+            <div className="book-grid">
               {picks.map(book => (
                 <BookCard key={book.id} book={book} categories={categories} />
               ))}

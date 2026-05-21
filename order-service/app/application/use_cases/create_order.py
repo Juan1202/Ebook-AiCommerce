@@ -55,8 +55,7 @@ class CreateOrderUseCase:
                     raise MissingPriceError(line.book_id)
                 unit_price = quote.suggested_price
 
-            isbn_raw = book.isbn or ""
-            book_reference = isbn_raw.replace("-", "") or None
+            book_reference = f"isbn:{book.isbn.replace('-', '')}" if book.isbn else None
             items.append(
                 OrderItem(
                     book_id=str(book.book_id),

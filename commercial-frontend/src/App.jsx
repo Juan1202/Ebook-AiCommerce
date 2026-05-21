@@ -4,6 +4,9 @@ import { Search, ShoppingCart, User, Truck, ShieldCheck, Sparkles } from 'lucide
 import Catalogo from './pages/Catalogo'
 import BookDetail from './components/BookDetail'
 import IAPicks from './pages/IAPicks'
+import Checkout from './pages/Checkout'
+import OrderSuccess from './pages/OrderSuccess'
+import OrdersList from './pages/OrdersList'
 import CartDrawer from './cart/CartDrawer'
 import FloatingChat from './components/FloatingChat'
 import LoginModal from './auth/LoginModal'
@@ -77,8 +80,9 @@ function Header({ onSearchChange, onOpenCart, onOpenLogin }) {
           )}
 
           {user ? (
-            <div className="user-menu">
+            <div className="user-menu" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <span className="user-greeting"><User size={14} /> {user.username}</span>
+              <Link to="/mis-pedidos" className="nav-link" style={{ fontSize: '0.85rem' }}>Mis Pedidos</Link>
               <button onClick={logout} className="logout-btn">Salir</button>
             </div>
           ) : (
@@ -102,6 +106,12 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [isLoginOpen, setIsLoginOpen] = useState(false)
 
+  useEffect(() => {
+    const handleOpenCart = () => setIsCartOpen(true)
+    window.addEventListener('open-cart', handleOpenCart)
+    return () => window.removeEventListener('open-cart', handleOpenCart)
+  }, [])
+
   return (
     <BrowserRouter>
       <Header
@@ -115,6 +125,9 @@ export default function App() {
         <Route path="/catalogo" element={<Catalogo searchQuery={searchQuery} />} />
         <Route path="/libro/:id" element={<BookDetail />} />
         <Route path="/ia-picks" element={<IAPicks />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/order-success/:orderId" element={<OrderSuccess />} />
+        <Route path="/mis-pedidos" element={<OrdersList />} />
       </Routes>
 
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />

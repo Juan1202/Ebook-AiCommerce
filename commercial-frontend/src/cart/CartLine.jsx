@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import { useCartStore } from './cart.store'
+import EnrichedBookImage from '../components/EnrichedBookImage'
 
-/** @param {{ item: import('./cart.types').CartItem }} props */
-export default function CartLine({ item }) {
+export default function CartLine({ item, stockError }) {
   const updateQuantity = useCartStore((s) => s.updateQuantity)
   const removeItem = useCartStore((s) => s.removeItem)
-  const [coverError, setCoverError] = useState(false)
 
   const lineTotal = (item.unitPrice * item.quantity).toLocaleString('es-CO', {
     style: 'currency',
@@ -19,26 +18,17 @@ export default function CartLine({ item }) {
     maximumFractionDigits: 0,
   })
 
-  const initials = item.title
-    .split(' ')
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase()
-
   return (
-    <div style={styles.row}>
+    <div style={{
+      ...styles.row,
+      borderBottom: stockError ? '1px solid #fca5a5' : '1px solid var(--border)',
+      backgroundColor: stockError ? 'rgba(239, 68, 68, 0.05)' : 'transparent',
+      padding: stockError ? '12px 8px' : '12px 0',
+      borderRadius: stockError ? '8px' : '0',
+      transition: 'all 0.2s ease',
+    }}>
       <div style={styles.cover}>
-        {!coverError && item.coverUrl ? (
-          <img
-            src={item.coverUrl}
-            alt={item.title}
-            onError={() => setCoverError(true)}
-            style={styles.coverImg}
-          />
-        ) : (
-          <div style={styles.coverPlaceholder}>{initials}</div>
-        )}
+        <EnrichedBookImage book={{ title: item.title, cover_url: item.cover_url || item.coverUrl }} height="100%" borderRadius="4px" />
       </div>
 
       <div style={styles.info}>
@@ -49,6 +39,24 @@ export default function CartLine({ item }) {
             <span style={styles.estimadoBadge}>Estimado</span>
           )}
         </div>
+        {stockError && (
+          <div style={{
+            fontSize: '10px',
+            color: '#b91c1c',
+            backgroundColor: '#fee2e2',
+            border: '1px solid #fca5a5',
+            borderRadius: '4px',
+            padding: '2px 6px',
+            marginTop: '6px',
+            fontWeight: '600',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+            width: 'fit-content'
+          }}>
+            <span>⚠️ Disp: {stockError.available}</span>
+          </div>
+        )}
       </div>
 
       <div style={styles.controls}>
