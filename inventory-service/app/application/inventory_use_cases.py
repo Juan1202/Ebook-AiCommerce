@@ -107,5 +107,19 @@ def get_batch_items(db: Session, batch_id: int):
     return inventory_repository.get_items_by_batch(db, batch_id)
 
 
+def reserve_item(db: Session, book_id: int | None = None,
+                 book_reference: str | None = None,
+                 quantity: int = 1):
+    success, payload = inventory_repository.reserve_item(
+        db,
+        book_id=book_id,
+        book_reference=book_reference,
+        quantity=quantity,
+    )
+    if not success:
+        raise ValueError(payload)
+    return payload
+
+
 def check_availability(db: Session, book_reference: str) -> int:
     return inventory_repository.check_availability(db, book_reference)

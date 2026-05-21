@@ -10,23 +10,26 @@ Plataforma inteligente de catalogación, pricing competitivo y venta de libros u
 |--------|--------|-------------|
 | Sprint 1 | Completado | Base arquitectónica: auth, inventory, catalog, BFF, frontends, calidad de datos |
 | Sprint 2 | Completado | Motor de IA: pricing trazable, enriquecimiento real, catálogo enriquecido, UI de precios |
+| **Sprint 3** | **✅ COMPLETADO** | **🆕 E2E Commerce: Carrito persistente + Órdenes + Checkout** |
 
 ---
 
-## Arquitectura — Sprint 2 (actual)
+## Arquitectura — Sprint 3 (actual)
 
 ```
 Usuario
-  └─► commercial-frontend  :3000   (catálogo enriquecido con precios)
-  └─► admin-frontend        :3001   (panel admin + gestión de precios)
+  └─► commercial-frontend  :3000   (catálogo + carrito + checkout)
+  └─► admin-frontend        :3001   (panel admin + gestión de órdenes)
          └─► bff-gateway    :8009   (API Gateway único)
                ├─► auth-service            :8001  → auth_db
                ├─► inventory-service       :8002  → inventory_db
                ├─► catalog-service         :8003  → catalog_db
-               ├─► ai-enrichment-service   :8004  → enrichment_db  ← NUEVO Sprint 2
-               ├─► pricing-service         :8005  → pricing_db     ← NUEVO Sprint 2
-               ├─► ai-enrichment-mock      :8006  (mock Sprint 1, aún activo)
-               ├─► data-quality-module     :8007  (proxy inventario)
+               ├─► ai-enrichment-service   :8004  → enrichment_db
+               ├─► pricing-service         :8005  → pricing_db
+               ├─► 🆕 cart-service         :8010  → cart_db         ← NUEVO Sprint 3
+               ├─► 🆕 order-service        :8011  → order_db        ← NUEVO Sprint 3
+               ├─► ai-enrichment-mock      :8006  (mock)
+               ├─► data-quality-module     :8007
                └─► config-module           :8008  → config_db
 ```
 
@@ -242,28 +245,107 @@ curl http://localhost:8004/external-apis/status           # Google Books / Open 
 
 ---
 
-## Servicios Sprint 2 — resumen
+### Sprint 3 — 🆕 E2E Commerce Flow (Cart & Orders)
 
-### Pricing Service (`pricing-service/`)
+**Flujo completo: Carrito → Órdenes → Checkout**
 
-Motor de precios inteligente y trazable.
+Ver documentación completa: [SPRINT3_README.md](SPRINT3_README.md)
 
-- Consulta **eBay Browse API** para obtener referencias de precio de mercado
-- Aplica **factores de condición**: NUEVO (1.0×), BUENO (0.75×), ACEPTABLE (0.50×), DETERIORADO (0.25×)
-- **Fallback automático** con reglas internas si eBay no responde
-- **Circuit breaker**: se abre tras 5 fallos consecutivos, cooldown de 5 minutos
-- Toda decisión se persiste con `explanation` en español y trazabilidad completa
-- Ver documentación detallada: [pricing-service/README.md](pricing-service/README.md)
+**1. Agregar item al carrito:**
+```bash
+curl -X POST http://localhost:8009/api/cart/user-123/items \
+  -H "Authorization: Bearer TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "book_id": 1,
+    "title": "The Great Gatsby",
+    "author": "F. Scott Fitzgerald",
+    "price": 1299,
+    "quantity": 2,
+    "condition": "NUEVO"
+  }'
+```
 
-### AI Enrichment Service (`ai-enrichment-service/`)
+**2. Ver carrito:**
+```bash
+curl http://localhost:8009/api/cart/user-123 \
+  -H "Authorization: Bearer TOKEN"
+```
 
-Enriquecimiento bibliográfico con APIs externas reales.
+**3. Crear orden desde carrito:**
+```bash
+curl -X POST http://localhost:8009/api/order \
+  -H "Authorization: Bearer TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "user-123",
+    "items": [
+      {
+        "book_id": 1,
+        "title": "The Great Gatsby",
+        "author": "F. Scott Fitzgerald",
+        "price": 1299,
+        "quantity": 2,
+        "condition": "NUEVO"
+      }
+    ],
+    "shipping_address": "123 Main St, City, Country",
+    "notes": "Delivery between 9-17"
+  }'
+```
 
-- Consulta **Google Books → Open Library → Crossref** en orden de prioridad
-- **Módulo normalizer**: convierte autores a `Apellido, Nombre`, valida ISBN-10/13, fusiona resultados multi-fuente
-- **Circuit breaker independiente** por cada API externa
-- Si todas las fuentes fallan, devuelve datos parciales con `status: "failed"`
-- Ver documentación detallada: [ai-enrichment-service/README.md](ai-enrichment-service/README.md)
+**4. Confirmar pago:**
+```bash
+curl -X POST http://localhost:8009/api/order/ORDER_ID/confirm \
+  -H "Authorization: Bearer TOKEN"
+```
+
+**5. Ver órdenes del usuario:**
+```bash
+curl http://localhost:8009/api/order/user/user-123 \
+  -H "Authorization: Bearer TOKEN"
+```
+
+**Automatizado con Postman:**
+```bash
+# Importar colección Sprint 3
+# Archivo: BookFlow_Sprint3_E2E.postman_collection.json
+```
+
+**Automatizado con Python:**
+```bash
+python e2e_tests.py
+# Ejecuta 14 tests verificando el flujo completo
+```
+
+---
+
+## Servicios Sprint 3 — resumen
+
+### Cart Service (`cart-service/`)
+
+Carrito de compras persistente en backend.
+
+- Crear/recuperar carritos por ID de usuario
+- Agregar/actualizar/eliminar items
+- Cálculo automático de totales (precio y cantidad)
+- Persistencia en PostgreSQL
+- API REST completa
+- Ver documentación detallada: [cart-service/README.md](cart-service/README.md)
+
+### Order Service (`order-service/`)
+
+Gestión de órdenes y checkout.
+
+- Crear órdenes desde items del carrito
+- Tracking de estado: pending → confirmed → processing → shipped → delivered
+- Tracking de pago: pending → completed/failed
+- Historial de órdenes por usuario
+- Soporte para múltiples condiciones de libros
+- Integración con inventory-service para reserva (extensible)
+- Persistencia en PostgreSQL
+- API REST completa
+- Ver documentación detallada: [order-service/README.md](order-service/README.md)
 
 ---
 
@@ -278,12 +360,18 @@ Ebook-AiCommerce/
 ├── catalog-service/         # Catálogo bibliográfico (FastAPI)
 ├── ai-enrichment-service/   # Enriquecimiento IA real — Sprint 2
 ├── pricing-service/         # Motor de precios — Sprint 2
+├── cart-service/            # Carrito persistente — Sprint 3 🆕
+├── order-service/           # Órdenes y checkout — Sprint 3 🆕
 ├── ai-enrichment-mock/      # Mock enriquecimiento — Sprint 1
 ├── bff-gateway/             # API Gateway (FastAPI)
 ├── data-quality-module/     # Módulo de calidad de datos
 ├── config-module/           # Configuración centralizada
 ├── docker-compose.yml       # Orquestación completa
 ├── .env.example             # Plantilla de variables de entorno
+├── E2E_FLOW_COMPLETE.md     # Guía completa del flujo E2E — Sprint 3 🆕
+├── SPRINT3_README.md        # Documentación Sprint 3 — Sprint 3 🆕
+├── e2e_tests.py             # Test suite automatizado — Sprint 3 🆕
+├── BookFlow_Sprint3_E2E.postman_collection.json  # Tests Postman — Sprint 3 🆕
 └── sample_inventory.csv     # Datos de prueba para inventario
 ```
 

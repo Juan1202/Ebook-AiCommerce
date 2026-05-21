@@ -94,11 +94,18 @@ async def calculate_price(
 
 
 @router.get("/{book_id}", response_model=PricingDecisionResponse)
-def get_latest_price(book_id: str, db: Session = Depends(get_db)):
+async def get_latest_price(book_id: str, db: Session = Depends(get_db)):
     """Get the latest pricing decision for a book"""
     decision = pricing_service.get_latest_price(db, book_id)
     if not decision:
-        raise HTTPException(status_code=404, detail="No pricing decision found for this book")
+        # Generate a default pricing decision on demand for books without prior pricing data
+        decision = await pricing_service.calculate_price(
+            db=db,
+            book_id=book_id,
+            book_title=f"Libro {book_id}",
+            condition=BookCondition.NUEVO,
+            author=None,
+        )
 
     return PricingDecisionResponse(
         id=decision.id,

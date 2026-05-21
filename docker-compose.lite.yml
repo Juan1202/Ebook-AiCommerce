@@ -1,0 +1,174 @@
+networks:
+  bookflow-network:
+    driver: bridge
+
+volumes:
+  auth-db-data:
+  inventory-db-data:
+  catalog-db-data:
+  pricing-db-data:
+  cart-db-data:
+  order-db-data:
+
+services:
+  auth-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${DB_NAME_AUTH}
+    volumes:
+      - auth-db-data:/var/lib/postgresql/data
+    networks:
+      - bookflow-network
+
+  inventory-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${DB_NAME_INVENTORY}
+    volumes:
+      - inventory-db-data:/var/lib/postgresql/data
+    networks:
+      - bookflow-network
+
+  catalog-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${DB_NAME_CATALOG}
+    volumes:
+      - catalog-db-data:/var/lib/postgresql/data
+    networks:
+      - bookflow-network
+
+  pricing-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${DB_NAME_PRICING}
+    volumes:
+      - pricing-db-data:/var/lib/postgresql/data
+    networks:
+      - bookflow-network
+
+  cart-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${DB_NAME_CART}
+    volumes:
+      - cart-db-data:/var/lib/postgresql/data
+    networks:
+      - bookflow-network
+
+  order-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${DB_NAME_ORDER}
+    volumes:
+      - order-db-data:/var/lib/postgresql/data
+    networks:
+      - bookflow-network
+
+  auth-service:
+    build: ./auth-service
+    ports:
+      - "8001:8001"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@auth-db:5432/${DB_NAME_AUTH}
+      SECRET_KEY: ${JWT_SECRET_KEY}
+      ALGORITHM: ${JWT_ALGORITHM}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES}
+    depends_on:
+      - auth-db
+    networks:
+      - bookflow-network
+
+  inventory-service:
+    build: ./inventory-service
+    ports:
+      - "8002:8002"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@inventory-db:5432/${DB_NAME_INVENTORY}
+    depends_on:
+      - inventory-db
+    networks:
+      - bookflow-network
+
+  catalog-service:
+    build: ./catalog-service
+    ports:
+      - "8003:8003"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@catalog-db:5432/${DB_NAME_CATALOG}
+    depends_on:
+      - catalog-db
+    networks:
+      - bookflow-network
+
+  pricing-service:
+    build: ./pricing-service
+    ports:
+      - "8005:8005"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pricing-db:5432/${DB_NAME_PRICING}
+      CATALOG_SERVICE_URL: http://catalog-service:8003
+      INVENTORY_SERVICE_URL: http://inventory-service:8002
+    depends_on:
+      - pricing-db
+    networks:
+      - bookflow-network
+
+  cart-service:
+    build: ./cart-service
+    ports:
+      - "8010:8010"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@cart-db:5432/${DB_NAME_CART}
+    depends_on:
+      - cart-db
+    networks:
+      - bookflow-network
+
+  order-service:
+    build: ./order-service
+    ports:
+      - "8011:8011"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@order-db:5432/${DB_NAME_ORDER}
+      CART_SERVICE_URL: http://cart-service:8010
+      INVENTORY_SERVICE_URL: http://inventory-service:8002
+    depends_on:
+      - order-db
+      - cart-service
+      - inventory-service
+    networks:
+      - bookflow-network
+
+  bff-gateway:
+    build: ./bff-gateway
+    ports:
+      - "8009:8009"
+    environment:
+      AUTH_SERVICE_URL: http://auth-service:8001
+      INVENTORY_SERVICE_URL: http://inventory-service:8002
+      CATALOG_SERVICE_URL: http://catalog-service:8003
+      PRICING_SERVICE_URL: http://pricing-service:8005
+      CART_SERVICE_URL: http://cart-service:8010
+      ORDER_SERVICE_URL: http://order-service:8011
+    depends_on:
+      - auth-service
+      - inventory-service
+      - catalog-service
+      - pricing-service
+      - cart-service
+      - order-service
+    networks:
+      - bookflow-network

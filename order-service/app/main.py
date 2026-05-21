@@ -1,11 +1,13 @@
 import time
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import OperationalError
 
 from app.infrastructure.database import Base, engine
-from app.routers.pricing_router import router as pricing_router
+from app.routers import order_router
 
 
 def wait_for_db(engine, retries=20, delay=3):
@@ -19,13 +21,18 @@ def wait_for_db(engine, retries=20, delay=3):
             time.sleep(delay)
 
 
-wait_for_db(engine)
-Base.metadata.create_all(bind=engine)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    wait_for_db(engine)
+    Base.metadata.create_all(bind=engine)
+    yield
+
 
 app = FastAPI(
-    title="BookFlow — Pricing Service",
-    description="Servicio de cálculo de precios sugeridos para libros",
+    title="BookFlow — Order Service",
+    description="Order management and checkout service",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -36,9 +43,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(pricing_router, prefix="/pricing", tags=["pricing"])
+app.include_router(order_router.router, prefix="/orders", tags=["orders"])
 
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": "pricing-service"}
+    return {"status": "ok", "service": "order-service"}

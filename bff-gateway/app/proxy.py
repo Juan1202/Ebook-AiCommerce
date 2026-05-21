@@ -2,7 +2,7 @@ import os
 import httpx
 from fastapi import Request, Response, HTTPException
 
-TIMEOUT = 5.0
+TIMEOUT = 10.0
 
 SERVICE_MAP = {
     "auth":            os.getenv("AUTH_SERVICE_URL",       "http://auth-service:8001"),
@@ -11,8 +11,18 @@ SERVICE_MAP = {
     "enrichment":      os.getenv("AI_ENRICHMENT_URL",      "http://ai-enrichment-mock:8006"),
     "enrichment-real": os.getenv("ENRICHMENT_SERVICE_URL", "http://ai-enrichment-service:8004"),
     "pricing":         os.getenv("PRICING_SERVICE_URL",    "http://pricing-service:8005"),
+    "cart":            os.getenv("CART_SERVICE_URL",       "http://cart-service:8010"),
+    "order":           os.getenv("ORDER_SERVICE_URL",      "http://order-service:8011"),
     "quality":         os.getenv("DATA_QUALITY_URL",       "http://data-quality-module:8007"),
     "config":          os.getenv("CONFIG_MODULE_URL",      "http://config-module:8008"),
+}
+
+SERVICE_PATH_PREFIX = {
+    "auth": "auth",
+    "cart": "carts",
+    "order": "orders",
+    "inventory": "inventory",
+    "pricing": "pricing",
 }
 
 
@@ -21,7 +31,11 @@ async def proxy_request(service_name: str, path: str, request: Request) -> Respo
     if base_url is None:
         raise HTTPException(status_code=404, detail=f"Servicio '{service_name}' no registrado")
 
-    url = f"{base_url}/{path}" if path else base_url
+    prefix = SERVICE_PATH_PREFIX.get(service_name)
+    if prefix:
+        url = f"{base_url}/{prefix}/{path}" if path else f"{base_url}/{prefix}"
+    else:
+        url = f"{base_url}/{path}" if path else base_url
     headers = {k: v for k, v in request.headers.items()
                if k.lower() not in ("host", "content-length")}
 

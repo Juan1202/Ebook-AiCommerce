@@ -6,11 +6,17 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.application.inventory_use_cases import (
-    check_availability, get_all_items, get_item,
+    check_availability, get_all_items, get_item, reserve_item as reserve_inventory_item,
 )
 from app.infrastructure.database import get_db
 
 router = APIRouter()
+
+
+class ReserveRequest(BaseModel):
+    book_id: Optional[int] = None
+    book_reference: Optional[str] = None
+    quantity: int = 1
 
 
 class ItemResponse(BaseModel):
@@ -53,6 +59,29 @@ def list_items(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
 def availability(book_reference: str, db: Session = Depends(get_db)):
     qty = check_availability(db, book_reference)
     return {"book_reference": book_reference, "quantity_available": qty, "is_available": qty > 0}
+
+
+@router.post("/reserve")
+def reserve_item_route(payload: ReserveRequest, db: Session = Depends(get_db)):
+    if payload.book_id is None and payload.book_reference is None:
+        raise HTTPException(status_code=400, detail="Se requiere book_id o book_reference para reservar")
+
+    try:
+        item = reserve_inventory_item(
+            db,
+            book_id=payload.book_id,
+            book_reference=payload.book_reference,
+            quantity=payload.quantity,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    return {
+        "item_id": item.id,
+        "book_reference": item.book_reference,
+        "quantity_reserved": item.quantity_reserved,
+        "quantity_available": item.quantity_available,
+    }
 
 
 @router.get("/{item_id}", response_model=ItemResponse)
