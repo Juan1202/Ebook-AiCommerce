@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers.gateway_router import router
+from app.audit import init_audit_db
+from app.routers.audit_router import router as audit_router
+from app.routers.gateway_router import router as gateway_router
 
 app = FastAPI(
     title="BFF Gateway",
@@ -16,4 +18,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(router)
+@app.on_event("startup")
+def on_startup():
+    init_audit_db()
+
+app.include_router(audit_router)
+app.include_router(gateway_router)
