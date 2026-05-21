@@ -36,6 +36,7 @@ async def health():
         "service": "bff-gateway",
         "version": "2.0.0",
         "services": services,
+        "routes": {name: f"/api/{name}/..." for name in SERVICE_MAP.keys()},
     }
 
 
