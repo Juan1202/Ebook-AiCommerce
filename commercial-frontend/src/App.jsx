@@ -1,27 +1,62 @@
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { Search, ShoppingCart, User, Truck, ShieldCheck, Sparkles } from 'lucide-react'
+import {
+  Search,
+  ShoppingCart,
+  User,
+  Truck,
+  ShieldCheck,
+  Sparkles,
+  Package,
+} from 'lucide-react'
+
 import Catalogo from './pages/Catalogo'
 import BookDetail from './components/BookDetail'
 import IAPicks from './pages/IAPicks'
+import OrdersPage from './orders/OrdersPage'
+
 import CartDrawer from './cart/CartDrawer'
+
 import FloatingChat from './components/FloatingChat'
+
 import LoginModal from './auth/LoginModal'
+
 import { Wordmark } from './components/ui'
+
 import { useCartStore } from './cart/cart.store'
 import { useAuthStore } from './auth/authStore'
+
 import './index.css'
 
-function Header({ onSearchChange, onOpenCart, onOpenLogin }) {
-  const [localSearch, setLocalSearch] = useState('')
-  const items = useCartStore((state) => state.items) || []
+function Header({
+  onSearchChange,
+  onOpenCart,
+  onOpenLogin,
+}) {
+  const [localSearch, setLocalSearch] =
+    useState('')
+
+  const items =
+    useCartStore(
+      (state) => state.items
+    ) || []
 
   useEffect(() => {
-    const timer = setTimeout(() => onSearchChange(localSearch), 500)
+    const timer = setTimeout(() => {
+      onSearchChange(localSearch)
+    }, 500)
+
     return () => clearTimeout(timer)
   }, [localSearch, onSearchChange])
-  const count = items.reduce((sum, item) => sum + item.quantity, 0)
-  const { user, logout } = useAuthStore()
+
+  const count = items.reduce(
+    (sum, item) =>
+      sum + item.quantity,
+    0
+  )
+
+  const { user, logout } =
+    useAuthStore()
 
   return (
     <header className="store-header">
@@ -30,10 +65,12 @@ function Header({ onSearchChange, onOpenCart, onOpenLogin }) {
           <Truck size={12} />
           Envío gratis en pedidos +$50
         </span>
+
         <span className="header-utility-item">
           <ShieldCheck size={12} />
           Pago seguro garantizado
         </span>
+
         <span className="header-utility-item">
           <Sparkles size={12} />
           Recomendaciones con IA
@@ -41,26 +78,53 @@ function Header({ onSearchChange, onOpenCart, onOpenLogin }) {
       </div>
 
       <div className="header-inner">
-        <Link to="/" className="header-logo">
+        <Link
+          to="/"
+          className="header-logo"
+        >
           <Wordmark />
         </Link>
 
         <nav className="header-nav">
-          <Link to="/" className="nav-link">Catálogo</Link>
-          <Link to="/ia-picks" className="nav-link nav-link-ai">
+          <Link
+            to="/"
+            className="nav-link"
+          >
+            Catálogo
+          </Link>
+
+          <Link
+            to="/ia-picks"
+            className="nav-link nav-link-ai"
+          >
             <Sparkles size={13} />
             IA Picks
+          </Link>
+
+          <Link
+            to="/mis-pedidos"
+            className="nav-link"
+          >
+            <Package size={13} />
+            Mis pedidos
           </Link>
         </nav>
 
         <div className="search-wrap">
-          <span className="search-icon"><Search size={15} /></span>
+          <span className="search-icon">
+            <Search size={15} />
+          </span>
+
           <input
             className="search-input"
             type="text"
             placeholder="Buscar por título, autor, ISBN…"
             value={localSearch}
-            onChange={(e) => setLocalSearch(e.target.value)}
+            onChange={(e) =>
+              setLocalSearch(
+                e.target.value
+              )
+            }
           />
         </div>
 
@@ -78,18 +142,39 @@ function Header({ onSearchChange, onOpenCart, onOpenLogin }) {
 
           {user ? (
             <div className="user-menu">
-              <span className="user-greeting"><User size={14} /> {user.username}</span>
-              <button onClick={logout} className="logout-btn">Salir</button>
+              <span className="user-greeting">
+                <User size={14} />
+                {user.username}
+              </span>
+
+              <button
+                onClick={logout}
+                className="logout-btn"
+              >
+                Salir
+              </button>
             </div>
           ) : (
-            <button onClick={onOpenLogin} className="login-btn">
+            <button
+              onClick={onOpenLogin}
+              className="login-btn"
+            >
               Iniciar sesión
             </button>
           )}
 
-          <button onClick={onOpenCart} className="cart-btn" aria-label="Carrito">
+          <button
+            onClick={onOpenCart}
+            className="cart-btn"
+            aria-label="Carrito"
+          >
             <ShoppingCart size={19} />
-            {count > 0 && <span className="cart-badge">{count}</span>}
+
+            {count > 0 && (
+              <span className="cart-badge">
+                {count}
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -98,28 +183,78 @@ function Header({ onSearchChange, onOpenCart, onOpenLogin }) {
 }
 
 export default function App() {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [isCartOpen, setIsCartOpen] = useState(false)
-  const [isLoginOpen, setIsLoginOpen] = useState(false)
+  const [searchQuery, setSearchQuery] =
+    useState('')
+
+  const [isCartOpen, setIsCartOpen] =
+    useState(false)
+
+  const [isLoginOpen, setIsLoginOpen] =
+    useState(false)
 
   return (
     <BrowserRouter>
       <Header
         onSearchChange={setSearchQuery}
-        onOpenCart={() => setIsCartOpen(true)}
-        onOpenLogin={() => setIsLoginOpen(true)}
+        onOpenCart={() =>
+          setIsCartOpen(true)
+        }
+        onOpenLogin={() =>
+          setIsLoginOpen(true)
+        }
       />
 
       <Routes>
-        <Route path="/" element={<Catalogo searchQuery={searchQuery} />} />
-        <Route path="/catalogo" element={<Catalogo searchQuery={searchQuery} />} />
-        <Route path="/libro/:id" element={<BookDetail />} />
-        <Route path="/ia-picks" element={<IAPicks />} />
+        <Route
+          path="/"
+          element={
+            <Catalogo
+              searchQuery={searchQuery}
+            />
+          }
+        />
+
+        <Route
+          path="/catalogo"
+          element={
+            <Catalogo
+              searchQuery={searchQuery}
+            />
+          }
+        />
+
+        <Route
+          path="/libro/:id"
+          element={<BookDetail />}
+        />
+
+        <Route
+          path="/ia-picks"
+          element={<IAPicks />}
+        />
+
+        <Route
+          path="/mis-pedidos"
+          element={<OrdersPage />}
+        />
       </Routes>
 
-      <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+      <CartDrawer
+        isOpen={isCartOpen}
+        onClose={() =>
+          setIsCartOpen(false)
+        }
+      />
+
       <FloatingChat />
-      {isLoginOpen && <LoginModal onClose={() => setIsLoginOpen(false)} />}
+
+      {isLoginOpen && (
+        <LoginModal
+          onClose={() =>
+            setIsLoginOpen(false)
+          }
+        />
+      )}
     </BrowserRouter>
   )
 }
