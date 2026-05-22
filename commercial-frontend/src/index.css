@@ -1299,9 +1299,10 @@ body {
 .fcp__close:hover { background: #eeeef2; color: #16171d; }
 .fcp__chips {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   padding: 10px 14px;
-  overflow-x: auto;
+  overflow: visible;
   scrollbar-width: none;
   flex-shrink: 0;
   border-bottom: 1px solid #f0f0f4;
