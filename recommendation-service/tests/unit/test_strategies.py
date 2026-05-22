@@ -6,10 +6,10 @@ from app.domain.strategies.author_similarity import AuthorSimilarityStrategy
 from app.domain.strategies.category_similarity import CategorySimilarityStrategy
 
 
-BOOK_A = {"id": "a", "title": "Book A", "author": "Martin Fowler", "category": "tech"}
-BOOK_B = {"id": "b", "title": "Book B", "author": "Martin Fowler", "category": "tech"}
-BOOK_C = {"id": "c", "title": "Book C", "author": "Kent Beck", "category": "tech"}
-BOOK_D = {"id": "d", "title": "Book D", "author": "Kent Beck", "category": "fiction"}
+BOOK_A = {"id": "a", "title": "Book A", "author": "Martin Fowler", "category_id": "tech"}
+BOOK_B = {"id": "b", "title": "Book B", "author": "Martin Fowler", "category_id": "tech"}
+BOOK_C = {"id": "c", "title": "Book C", "author": "Kent Beck", "category_id": "tech"}
+BOOK_D = {"id": "d", "title": "Book D", "author": "Kent Beck", "category_id": "fiction"}
 
 ALL_BOOKS = [BOOK_A, BOOK_B, BOOK_C, BOOK_D]
 
@@ -36,7 +36,7 @@ def test_author_similarity_excludes_different_author():
 
 def test_author_similarity_empty_author():
     strategy = AuthorSimilarityStrategy()
-    book_no_author = {"id": "x", "title": "No Author", "author": "", "category": "tech"}
+    book_no_author = {"id": "x", "title": "No Author", "author": "", "category_id": "tech"}
     results = run(strategy.recommend(book_no_author, ALL_BOOKS))
     assert results == []
 

@@ -3,11 +3,12 @@ from app.domain.entities.recommendation import RecommendedBook
 from app.domain.strategies.author_similarity import AuthorSimilarityStrategy
 from app.domain.strategies.category_similarity import CategorySimilarityStrategy
 from app.infrastructure.clients.catalog_client import CatalogClient
-
+from app.infrastructure.clients.inventory_client import InventoryClient
 
 class RecommendUseCase:
-    def __init__(self, catalog: CatalogClient) -> None:
+    def __init__(self, catalog: CatalogClient, inventory: InventoryClient) -> None:
         self._catalog = catalog
+        self._inventory = inventory
         self._strategies = [
             AuthorSimilarityStrategy(),
             CategorySimilarityStrategy(),
@@ -27,8 +28,10 @@ class RecommendUseCase:
             candidates = await strategy.recommend(book, all_books)
             for candidate in candidates:
                 if candidate.book_id not in seen_ids:
-                    seen_ids.add(candidate.book_id)
-                    results.append(candidate)
+                    # Filtrar libros agotados
+                    if self._inventory.is_available(candidate.book_id):
+                        seen_ids.add(candidate.book_id)
+                        results.append(candidate)
 
         results.sort(key=lambda r: r.score, reverse=True)
         return results[: settings.MAX_RECOMMENDATIONS]
