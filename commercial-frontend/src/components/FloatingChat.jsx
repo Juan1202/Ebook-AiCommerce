@@ -3,10 +3,10 @@ import { X, Bot, Sparkles, ChevronRight, ArrowRight, BookOpen, Tag, Calendar, Re
 import { sendChatMessage } from "../services/chatService";
 
 const CHIPS = [
-  { id: "disponibilidad", label: "Disponibilidad", icon: BookOpen, question: "¿Qué libros están disponibles?" },
-  { id: "precios", label: "Precios", icon: Tag, question: "¿Cuáles son los libros más baratos?" },
-  { id: "recomendar", label: "Recomendar", icon: Calendar, question: "Recomiéndame un libro" },
-  { id: "alternativas", label: "Alternativas", icon: Repeat2, question: "¿Qué libros de novela tienen?" },
+  { id: "disponibilidad", label: "Disponibilidad", icon: BookOpen, question: "Muéstrame libros con stock disponible" },
+  { id: "precios", label: "Precios", icon: Tag, question: "Muéstrame libros con precio registrado" },
+  { id: "recomendar", label: "Recomendar", icon: Calendar, question: "Recomiéndame libros del catálogo" },
+  { id: "alternativas", label: "Novela", icon: Repeat2, question: "Busco libros de novela" },
 ];
 
 const SUGGESTIONS = [
@@ -87,7 +87,7 @@ export default function FloatingChat() {
               </div>
               <div className="fcp__header-sub">
                 <span className="fcp__dot" />
-                Conectado al catálogo · 12,480 ítems
+                Conectado al catálogo real
               </div>
             </div>
             <button className="fcp__close" onClick={() => setOpen(false)} aria-label="Cerrar">
